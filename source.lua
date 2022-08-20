@@ -931,8 +931,8 @@ library.createList = function(option, parent)
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        ScrollBarImageColor3 = Color3.new(),
-        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = library.flags["Menu Accent Color"],
+        ScrollBarThickness = 4,
         ScrollingDirection = Enum.ScrollingDirection.Y,
         VerticalScrollBarInset = Enum.ScrollBarInset.Always,
         TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
@@ -1072,6 +1072,14 @@ library.createList = function(option, parent)
             Visible = self.multiselect and self.value[value] or self.value == value,
             Parent = label
         })
+
+        local hoverOverlay = library:Create("Frame", {
+            ZIndex = 4,	
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 0.8,
+            Visible = false,
+            Parent = label
+        })
         selected = selected or self.value == value and labelOverlay
         table.insert(library.theme, labelOverlay)
 
@@ -1084,6 +1092,20 @@ library.createList = function(option, parent)
                     self:SetValue(value)
                     self:Close()
                 end
+            end
+        end)
+
+        label.InputBegan:connect(function(input)
+            if input.UserInputType.Name == "MouseMovement" then
+                hoverOverlay.Visible = true
+                hoverOverlay.BackgroundTransparency = 0.8
+            end
+        end)
+
+        label.InputEnded:connect(function(input)
+            if input.UserInputType.Name == "MouseMovement" then
+                hoverOverlay.Visible = false
+                hoverOverlay.BackgroundTransparency = 0.8
             end
         end)
     end
@@ -1282,8 +1304,9 @@ library.createBox = function(option, parent)
     end)
 
     function option:SetValue(value, enter)
-        if tostring(value) == "" then
-            inputvalue.Text = self.value
+        if tostring(value):match("^%s*$") then
+            inputvalue.Text = ""
+            library.flags[self.flag] = nil
         else
             library.flags[self.flag] = tostring(value)
             self.value = tostring(value)
@@ -1291,6 +1314,7 @@ library.createBox = function(option, parent)
             self.callback(value, enter)
         end
     end
+
     delay(1, function()
         if library then
             option:SetValue(option.value)
@@ -2052,8 +2076,6 @@ function library:AddTab(title, pos)
                 else
                     option.Init = library.createBox
                 end
-
-                return option
             end
 
             function section:AddColor(option)
@@ -2473,7 +2495,7 @@ function library:Init()
     if runService:IsStudio() then
         self.base.Parent = script.Parent.Parent
     elseif syn then
-        pcall(function() syn.protect_gui(self.base) end)
+        --pcall(function() syn.protect_gui(self.base) end)
         self.base.Parent = game:GetService("CoreGui")
     end
 
@@ -2557,7 +2579,6 @@ function library:Init()
         Thickness = 1,
         Visible = true
     })
-
     self.tooltip = self:Create("TextLabel", {
         ZIndex = 2,
         BackgroundTransparency = 1,
@@ -2728,7 +2749,7 @@ function library:Init()
     if not getgenv().silent then
         --if Loaded then
             local r, g, b = library.round(library.flags["Menu Accent Color"])
-            library:SendNotification(5, "Loaded <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.title.."</font> successfully")
+            library:SendNotification(5, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.title.."</font> loaded successfully")
         --else
         --    local r, g, b = library.round(library.flags["Menu Accent Color"])
         --    library:SendNotification(5, "Failed to load "..library.title.." (error copied to clipboard)")
@@ -2781,34 +2802,44 @@ end})
 library.ConfigSection = library.SettingsColumn1:AddSection"Configs"
 library.ConfigSection:AddBox({text = "Config Name", skipflag = true})
 library.ConfigSection:AddButton({text = "Create", callback = function()
-    library:GetConfigs()
-    writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
-    library.options["Config List"]:AddValue(library.flags["Config Name"])
+    local r, g, b = library.round(library.flags["Menu Accent Color"])
+    if library.flags["Config Name"] ~= nil then
+        library:GetConfigs()
+        writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
+        library.options["Config List"]:AddValue(library.flags["Config Name"])
+        library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config Name"].."</font> config")
+        library.options["Config Name"]:SetValue("")
+    else
+        library:SendNotification(2, "<font color='rgb(204, 52, 51)'>Error:</font> Name your <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>config</font>")
+    end
 end})
 library.ConfigWarning = library:AddWarning({type = "confirm"})
 library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", values = library:GetConfigs()})
 library.ConfigSection:AddButton({text = "Save", callback = function()
     local r, g, b = library.round(library.flags["Menu Accent Color"])
-    library.ConfigWarning.text = "Are you sure you want to save the current settings to config <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>?"
+    library.ConfigWarning.text = "Are you sure you want to save the current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>? config"
     if library.ConfigWarning:Show() then
         library:SaveConfig(library.flags["Config List"])
+        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been saved")
     end
 end})
 library.ConfigSection:AddButton({text = "Load", callback = function()
     local r, g, b = library.round(library.flags["Menu Accent Color"])
-    library.ConfigWarning.text = "Are you sure you want to load config <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>?"
+    library.ConfigWarning.text = "Are you sure you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
     if library.ConfigWarning:Show() then
         library:LoadConfig(library.flags["Config List"])
+        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
     end
 end})
 library.ConfigSection:AddButton({text = "Delete", callback = function()
     local r, g, b = library.round(library.flags["Menu Accent Color"])
-    library.ConfigWarning.text = "Are you sure you want to delete config <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>?"
-    if ConfigWarning:Show() then
+    library.ConfigWarning.text = "Are you sure you want to delete <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
+    if library.ConfigWarning:Show() then
         local Config = library.flags["Config List"]
         if table.find(library:GetConfigs(), Config) and isfile(library.foldername .. "/" .. Config .. library.fileext) then
-            library.options["Config List"]:RemoveValue(Config)
             delfile(library.foldername .. "/" .. Config .. library.fileext)
+            library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
+            library.options["Config List"]:RemoveValue(Config)
         end
     end
 end})
@@ -2863,15 +2894,15 @@ function library:SendNotification(duration, message)
     wait(0.4)
 
     --create other things
-    local notification1 = library:Create("Frame", {
+    notification1 = library:Create("Frame", {
         Position = UDim2.new(0, 0, 0, 20),
         Size = UDim2.new(0, 0, 0, 1),
         BackgroundColor3 = library.flags["Menu Accent Color"],
         BorderSizePixel = 0,
         Parent = notification
-    }):TweenSize(UDim2.new(1, 0, 0, 1), "Out", "Linear", duration)
+    })
 
-    local notification2 = tweenService:Create(library:Create("TextLabel", {
+    notification2 = library:Create("TextLabel", {
         Position = UDim2.new(0, 4, 0, 1),
         Size = UDim2.new(0, 70, 0, 16),
         BackgroundTransparency = 1,
@@ -2881,7 +2912,10 @@ function library:SendNotification(duration, message)
         TextSize = 16,
         TextTransparency = 1,
         Parent = notification
-    }), TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+    })
+
+    notification1:TweenSize(UDim2.new(1, 0, 0, 1), "Out", "Linear", duration)
+    tweenService:Create(notification2, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
     table.insert(library.theme, notification1)
     table.insert(library.theme, notification2)
