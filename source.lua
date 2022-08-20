@@ -753,6 +753,7 @@ library.createSlider = function(option, parent)
                 option:SetValue(tonumber(option.title.Text))
             else
                 option.title.Text = (option.text == "nil" and "" or option.text .. ": ") .. option.value .. option.suffix
+                library:SendNotification(2, "<font color='rgb(204, 52, 51)'>Error:</font> Input a valid integer")
             end
         end
         manualInput = false
@@ -761,14 +762,13 @@ library.createSlider = function(option, parent)
     local interest = (option.sub or option.textpos) and option.slider or option.main
     interest.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
-            if inputService:IsKeyDown(Enum.KeyCode.LeftControl) or inputService:IsKeyDown(Enum.KeyCode.RightControl) then
-                manualInput = true
-                option.title:CaptureFocus()
-            else
-                library.slider = option
-                option.slider.BorderColor3 = library.flags["Menu Accent Color"]
-                option:SetValue(option.min + ((input.Position.X - option.slider.AbsolutePosition.X) / option.slider.AbsoluteSize.X) * (option.max - option.min))
-            end
+            library.slider = option
+            option.slider.BorderColor3 = library.flags["Menu Accent Color"]
+            option:SetValue(option.min + ((input.Position.X - option.slider.AbsolutePosition.X) / option.slider.AbsoluteSize.X) * (option.max - option.min))
+        end
+        if input.UserInputType.Name == "MouseButton2" then
+            manualInput = true
+            option.title:CaptureFocus()
         end
         if input.UserInputType.Name == "MouseMovement" then
             if not library.warning and not library.slider then
@@ -1180,7 +1180,6 @@ library.createList = function(option, parent)
         option.arrow.Rotation = 90
         self.open = false
         option.holder.Visible = false
-        option.listvalue.BorderColor3 = Color3.new()
     end
 
     return option
@@ -1770,7 +1769,6 @@ library.createColor = function(option, parent)
         library.popup = nil
         self.open = false
         self.mainHolder.Visible = false
-        option.visualize.BorderColor3 = Color3.new()
     end
 end
 
@@ -2814,7 +2812,8 @@ library.ConfigSection:AddButton({text = "Create", callback = function()
     end
 end})
 library.ConfigWarning = library:AddWarning({type = "confirm"})
-library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", values = library:GetConfigs()})
+library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", value = getgenv().autoload or "Default", values = library:GetConfigs()})
+
 library.ConfigSection:AddButton({text = "Save", callback = function()
     local r, g, b = library.round(library.flags["Menu Accent Color"])
     library.ConfigWarning.text = "Are you sure you want to save the current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>? config"
@@ -2828,6 +2827,7 @@ library.ConfigSection:AddButton({text = "Load", callback = function()
     library.ConfigWarning.text = "Are you sure you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
     if library.ConfigWarning:Show() then
         library:LoadConfig(library.flags["Config List"])
+        getgenv().autoload = library.flags["Config List"]
         library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
     end
 end})
