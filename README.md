@@ -7,4 +7,5 @@ forked from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/network/me
 - Added hide notification animation
 - Added hover animation for dropdowns
 - Added click animation for buttons
+- Removed dead assests
 - Other minor changes (changes to color, settings tab, notifications, etc)
