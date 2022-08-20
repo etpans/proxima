@@ -2495,7 +2495,7 @@ function library:Init()
     if runService:IsStudio() then
         self.base.Parent = script.Parent.Parent
     elseif syn then
-        --pcall(function() syn.protect_gui(self.base) end)
+        pcall(function() syn.protect_gui(self.base) end)
         self.base.Parent = game:GetService("CoreGui")
     end
 
