@@ -11,3 +11,4 @@ forked from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/network/me
 - Other minor changes (changes to color, settings tab, notifications, etc)
 - Right click to edit sliders (from ctrl-click)
 - Created autoload function to settings
+- Selection highlighting for warning function
