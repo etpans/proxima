@@ -2401,11 +2401,29 @@ function library:AddWarning(warning)
                     if input.UserInputType.Name == "MouseButton1" then
                         answer = true
                     end
+                    if input.UserInputType.Name == "MouseMovement" then
+                        button.BorderColor3 = library.flags["Menu Accent Color"]
+                    end
+                end)
+
+                button.InputEnded:connect(function(input)
+                    if input.UserInputType.Name == "MouseMovement" then
+                        button.BorderColor3 = Color3.new()
+                    end
                 end)
 
                 button1.InputBegan:connect(function(input)
                     if input.UserInputType.Name == "MouseButton1" then
                         answer = false
+                    end
+                    if input.UserInputType.Name == "MouseMovement" then
+                        button1.BorderColor3 = library.flags["Menu Accent Color"]
+                    end
+                end)
+
+                button1.InputEnded:connect(function(input)
+                    if input.UserInputType.Name == "MouseMovement" then
+                        button1.BorderColor3 = Color3.new()
                     end
                 end)
             else
@@ -2480,6 +2498,7 @@ function library:Close()
         if self.popup then
             self.popup:Close()
         end
+        print('here')
         self.main.Visible = self.open
         self.cursor.Visible  = self.open
     end
@@ -2579,6 +2598,7 @@ function library:Init()
     })
     self.tooltip = self:Create("TextLabel", {
         ZIndex = 2,
+        Position = UDim2.new(-1, 0, -1, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         TextSize = 15,
@@ -2816,7 +2836,7 @@ library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", fl
 
 library.ConfigSection:AddButton({text = "Save", callback = function()
     local r, g, b = library.round(library.flags["Menu Accent Color"])
-    library.ConfigWarning.text = "Are you sure you want to save the current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>? config"
+    library.ConfigWarning.text = "Are you sure you want to save your current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
     if library.ConfigWarning:Show() then
         library:SaveConfig(library.flags["Config List"])
         library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been saved")
@@ -2950,4 +2970,5 @@ if not library:GetConfigs()[1] then
     writefile(library.foldername .. "/Default" .. library.fileext, loadstring(game:HttpGet("https://raw.githubusercontent.com/2kbyte/public/main/uwuware-lib-fork.lua/default_config.lua", true))())
     library.options["Config List"]:AddValue("Default")
     library:LoadConfig("Default")
+    getgenv().autoload = library.flags["Config List"]
 end
