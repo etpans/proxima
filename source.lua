@@ -2498,7 +2498,6 @@ function library:Close()
         if self.popup then
             self.popup:Close()
         end
-        print('here')
         self.main.Visible = self.open
         self.cursor.Visible  = self.open
     end
