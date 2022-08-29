@@ -12,3 +12,4 @@ forked from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/network/me
 - Right click to edit sliders (from ctrl-click)
 - Created autoload function to settings
 - Selection highlighting for warning function
+- Added different status for notfication function (1 = warning, 2 = error, 3 = success, 4 = information) 
