@@ -15,6 +15,6 @@ forked from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/network/me
 - Added different status for notfication function (1 = warning, 2 = error, 3 = success, 4 = information) 
 
 ## To-Do:
-- [] Make autoload and autosave functions
-- [] Clicking off of popup elements unfocuses them (dropdowns, colorpickers, etc)
-- [] Inside of dropdown disables background elements
+- [ ] Make autoload and autosave functions
+- [ ] Clicking off of popup elements unfocuses them (dropdowns, colorpickers, etc)
+- [ ] Inside of dropdown disables background elements
