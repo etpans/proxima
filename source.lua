@@ -16,7 +16,7 @@ if getgenv().library then
     getgenv().library:Unload()
 end
 
-local library = {tabs = {}, draggable = true, flags = {}, title = "proxima", open = false, mousestate = inputService.MouseIconEnabled, popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "proxima_configs", fileext = ".cfg", silent = false}
+local library = {tabs = {}, draggable = true, flags = {}, title = "proxima", notification = "proxima", open = false, mousestate = inputService.MouseIconEnabled, popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "proxima_configs", fileext = ".cfg", silent = false}
 getgenv().library = library
 
 --Locals
@@ -2887,7 +2887,6 @@ function library:SendNotification(duration, message, status)
     if status then
         status = tonumber(status) or nil
         message = message and tostring(message) or "Empty"
-        if not status then return end
         if message ~= "Empty" then
             if status == 1 then
                 message = "<font color='rgb(245, 240, 112)'>Warning:</font> "..message
@@ -2947,11 +2946,12 @@ function library:SendNotification(duration, message, status)
         Position = UDim2.new(0, 4, 0, 1),
         Size = UDim2.new(0, 70, 0, 16),
         BackgroundTransparency = 1,
-        Text = "proxima",
+        Text = library.notification,
         Font = Enum.Font.Gotham,
         TextColor3 = library.flags["Menu Accent Color"],
         TextSize = 16,
         TextTransparency = 1,
+        TextXAlignment = "Left",
         Parent = notification
     })
 
