@@ -1,5 +1,5 @@
 # proxima
-forked from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/network/members) by Pans
+forked by Pans from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/network/members)
 
 ## Changes from Source
 - Changed cursor
