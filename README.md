@@ -16,6 +16,6 @@ forked by Pans from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/ne
 - Fixed sliders not rounding when float = 0.1
 
 ## To-Do:
-- [ ] Make autoload and autosave functions
+- [ ] ~~Make autoload and autosave functions~~ rework save and load functions
 - [ ] Clicking off of popup elements unfocuses them (dropdowns, colorpickers, etc)
 - [ ] Inside of dropdown disables background elements
