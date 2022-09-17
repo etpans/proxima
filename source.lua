@@ -38,7 +38,12 @@ library.round = function(num, bracket)
     elseif typeof(num) == "Color3" then
         return library.round(num.r * 255), library.round(num.g * 255), library.round(num.b * 255)
     else
-        return num - num % (bracket or 1);
+        if bracket then
+            local float = math.floor(num / bracket + 0.5) * bracket
+            return math.floor(float * 10) / 10
+        else
+            return num - num % (bracket or 1)
+        end
     end
 end
 
@@ -2832,14 +2837,15 @@ library.ConfigSection = library.SettingsColumn1:AddSection("Configs")
 local r, g, b = library.round(library.flags["Menu Accent Color"])
 library.ConfigSection:AddBox({text = "Config Name", skipflag = true})
 library.ConfigSection:AddButton({text = "Create", callback = function()
-    if library.flags["Config Name"] ~= nil then
+    if library.flags["Config Name"] ~= nil and not library.flags["Config Name"]:match("auto_load") then
         library:GetConfigs()
         writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
         library.options["Config List"]:AddValue(library.flags["Config Name"])
+        --library.options["Auto Load List"]:AddValue(library.flags["Config Name"])
         library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config Name"].."</font> config")
         library.options["Config Name"]:SetValue("")
     else
-        library:SendNotification(2, "Name your <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>config</font>", 2)
+        library:SendNotification(5, "Invaild string.\nDo not use spaces", 2)
     end
 end})
 library.ConfigWarning = library:AddWarning({type = "confirm"})
@@ -2867,9 +2873,23 @@ library.ConfigSection:AddButton({text = "Delete", callback = function()
             delfile(library.foldername .. "/" .. Config .. library.fileext)
             library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
             library.options["Config List"]:RemoveValue(Config)
+            --library.options["Auto Load List"]:RemoveValue(Config)
         end
     end
 end})
+
+--[[library.AutoSection = library.SettingsColumn1:AddSection("Automatic")
+library.AutoSection:AddDivider("Auto Load")
+library.AutoSection:AddToggle({text = "Enabled", flag = "Auto Load", callback = function(State)
+    if State then
+        writefile(library.foldername .. "/auto_load" .. library.fileext, "return '"..library.flags["Auto Load List"].."'")
+    end
+end})
+library.AutoSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Auto Load List", value = "Default", values = library:GetConfigs(), callback = function(config)
+    if library.flags["Auto Load"] then
+        writefile(library.foldername .. "/auto_load.cfg", "return '"..config.."'")
+    end
+end})]]
 
 --Notification
 local LastNotification = 0
@@ -2983,7 +3003,10 @@ end
 
 --Loaded, LoadError = pcall(function() end)
 
---delay(1, function() library:LoadConfig(("Default")) end)
+delay(1.5, function() 
+    --library:LoadConfig("Default")
+    library:SendNotification(3, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>Default</font> config loaded")
+end)
 
 --insert loaded notification
 
