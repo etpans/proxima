@@ -3005,7 +3005,7 @@ end
 
 delay(1.5, function() 
     --library:LoadConfig("Default")
-    library:SendNotification(3, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>Default</font> config loaded")
+    --library:SendNotification(3, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>Default</font> config loaded")
 end)
 
 --insert loaded notification
