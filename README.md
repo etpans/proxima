@@ -15,6 +15,7 @@ forked by Pans from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/ne
 - Added different status for notfication function (1 = warning, 2 = error, 3 = success, 4 = information) 
 - Fixed sliders not rounding when float = 0.1
 - Fixed tooltips not displaying with button elements
+- Fixed binds not saving 'none' values
 
 ## To-Do:
 - [x] ~~Make autoload and autosave functions~~ rework save and load functions
