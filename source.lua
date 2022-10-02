@@ -142,9 +142,7 @@ function library:SaveConfig(config)
                     Config[option.flag .. " Transparency"] = option.trans
                 end
             elseif option.type == "bind" then
-                if option.key ~= "none" then
-                    Config[option.flag] = option.key
-                end
+                Config[option.flag] = option.key
             elseif option.type == "list" then
                 Config[option.flag] = option.value
             else
@@ -622,7 +620,7 @@ library.createBind = function(option, parent)
     end)
 
     library:AddConnection(inputService.InputEnded, function(input)
-        if option.key ~= "none" then
+        if option.key ~= "None" then
             if input.KeyCode.Name == option.key or input.UserInputType.Name == option.key then
                 if Loop then
                     Loop:Disconnect()
@@ -639,11 +637,11 @@ library.createBind = function(option, parent)
         if Loop then Loop:Disconnect() library.flags[option.flag] = false option.callback(true, 0) end
         self.key = (key and key.Name) or key or self.key
         if self.key == "Backspace" then
-            self.key = "none"
+            self.key = "None"
             bindinput.Text = "[NONE]"
         else
             local a = self.key
-            if self.key:match"Mouse" then
+            if self.key:match("Mouse") then
                 a = self.key:gsub("Button", ""):gsub("Mouse", "M")
             elseif self.key:match"Shift" or self.key:match"Alt" or self.key:match"Control" then
                 a = self.key:gsub("Left", "L"):gsub("Right", "R")
@@ -1931,7 +1929,7 @@ function library:AddTab(title, pos)
                 option = typeof(option) == "table" and option or {}
                 option.section = self
                 option.text = tostring(option.text)
-                option.key = (option.key and option.key.Name) or option.key or "none"
+                option.key = (option.key and option.key.Name) or option.key or "None"
                 option.nomouse = typeof(option.nomouse) == "boolean" and option.nomouse or false
                 option.mode = typeof(option.mode) == "string" and (option.mode == "toggle" or option.mode == "hold" and option.mode) or "toggle"
                 option.callback = typeof(option.callback) == "function" and option.callback or function() end
