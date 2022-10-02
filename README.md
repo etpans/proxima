@@ -14,8 +14,9 @@ forked by Pans from [uwuware by Jan](https://github.com/Jan5106/uwuware_final/ne
 - Selection highlighting for warning function
 - Added different status for notfication function (1 = warning, 2 = error, 3 = success, 4 = information) 
 - Fixed sliders not rounding when float = 0.1
+- Fixed tooltips not displaying with button elements
 
 ## To-Do:
-- [ ] ~~Make autoload and autosave functions~~ rework save and load functions
+- [x] ~~Make autoload and autosave functions~~ rework save and load functions
 - [ ] Clicking off of popup elements unfocuses them (dropdowns, colorpickers, etc)
 - [ ] Inside of dropdown disables background elements
