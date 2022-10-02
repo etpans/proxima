@@ -620,7 +620,7 @@ library.createBind = function(option, parent)
     end)
 
     library:AddConnection(inputService.InputEnded, function(input)
-        if option.key ~= "None" then
+        if option.key ~= "none" then
             if input.KeyCode.Name == option.key or input.UserInputType.Name == option.key then
                 if Loop then
                     Loop:Disconnect()
@@ -637,7 +637,7 @@ library.createBind = function(option, parent)
         if Loop then Loop:Disconnect() library.flags[option.flag] = false option.callback(true, 0) end
         self.key = (key and key.Name) or key or self.key
         if self.key == "Backspace" then
-            self.key = "None"
+            self.key = "none"
             bindinput.Text = "[NONE]"
         else
             local a = self.key
@@ -1929,7 +1929,7 @@ function library:AddTab(title, pos)
                 option = typeof(option) == "table" and option or {}
                 option.section = self
                 option.text = tostring(option.text)
-                option.key = (option.key and option.key.Name) or option.key or "None"
+                option.key = (option.key and option.key.Name) or option.key or "none"
                 option.nomouse = typeof(option.nomouse) == "boolean" and option.nomouse or false
                 option.mode = typeof(option.mode) == "string" and (option.mode == "toggle" or option.mode == "hold" and option.mode) or "toggle"
                 option.callback = typeof(option.callback) == "function" and option.callback or function() end
