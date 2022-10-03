@@ -5,7 +5,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/2kbyte/proxima/main/s
 ```
 
 ## Making Tabs and Sections
-Each tab has two columns which are created using the same functions.
+Each tab has two columns which are created using the same function.
 ```lua
 local tab1 = library:AddTab("Tab 1")
 local column1 = tab1:AddColumn()
