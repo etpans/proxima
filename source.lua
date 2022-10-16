@@ -510,13 +510,13 @@ library.createButton = function(option, parent)
             if library then
                 library.flags[option.flag] = true
             end
-        end
-
-        if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Text = option.tip
                 library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
+        end
+
+        if input.UserInputType.Name == "MouseMovement" then
             if not library.warning and not library.slider then
                 option.title.BorderColor3 = library.flags["Menu Accent Color"]
             end
@@ -620,7 +620,7 @@ library.createBind = function(option, parent)
     end)
 
     library:AddConnection(inputService.InputEnded, function(input)
-        if option.key ~= "none" then
+        if option.key ~= "None" then
             if input.KeyCode.Name == option.key or input.UserInputType.Name == option.key then
                 if Loop then
                     Loop:Disconnect()
@@ -637,8 +637,8 @@ library.createBind = function(option, parent)
         if Loop then Loop:Disconnect() library.flags[option.flag] = false option.callback(true, 0) end
         self.key = (key and key.Name) or key or self.key
         if self.key == "Backspace" then
-            self.key = "none"
-            bindinput.Text = "[NONE]"
+            self.key = "None"
+            bindinput.Text = "[None]"
         else
             local a = self.key
             if self.key:match("Mouse") then
@@ -1929,7 +1929,7 @@ function library:AddTab(title, pos)
                 option = typeof(option) == "table" and option or {}
                 option.section = self
                 option.text = tostring(option.text)
-                option.key = (option.key and option.key.Name) or option.key or "none"
+                option.key = (option.key and option.key.Name) or option.key or "None"
                 option.nomouse = typeof(option.nomouse) == "boolean" and option.nomouse or false
                 option.mode = typeof(option.mode) == "string" and (option.mode == "toggle" or option.mode == "hold" and option.mode) or "toggle"
                 option.callback = typeof(option.callback) == "function" and option.callback or function() end
@@ -2783,27 +2783,27 @@ function library:Init()
     end
 end
 
---Setting Tab
+--Setting tab
 library.SettingsTab = library:AddTab("Settings", math.huge)
+library.SettingsColumn = library.SettingsTab:AddColumn()
 library.SettingsColumn1 = library.SettingsTab:AddColumn()
-library.SettingsColumn2 = library.SettingsTab:AddColumn()
 
---Main Section
-library.MainSection = library.SettingsColumn1:AddSection("Main")
+library.MainSection = library.SettingsColumn:AddSection("Main")
 library.MainSection:AddButton({text = "Unload Cheat", nomouse = true, callback = function()
     library:Unload()
-    --getgenv().proxima = nil
+    getgenv().proxima = nil
 end})
-library.MainSection:AddBind({text = "Panic Key", nomouse = true, callback = library.options["Unload Cheat"].callback})
-library.MainSection:AddToggle({text = "Notifications", tip = "Toggle to hide notifications", state = true, callback = function(State)
-    library.silent = not State and true or false
-end})
+library.MainSection:AddBind({text = "Panic Key", callback = library.options["Unload Cheat"].callback})
+--[[library.MainSection:AddToggle({text = "Silent", callback = function(State)
+    if State then
+        library.silent = true
+    else
+        library.silent = false
+    end
+end})]]
 
---Menu Section
-library.MenuSection = library.SettingsColumn1:AddSection("Menu")
-library.MenuSection:AddBind({text = "Open / Close", flag = "UI Toggle", nomouse = true, key = "F8", callback = function()
-    library:Close()
-end})
+library.MenuSection = library.SettingsColumn:AddSection("Menu")
+library.MenuSection:AddBind({text = "Open / Close", flag = "UI Toggle", nomouse = true, key = "F8", callback = function() library:Close() end})
 library.MenuSection:AddColor({text = "Accent Color", flag = "Menu Accent Color", color = Color3.fromRGB(189, 147, 249), callback = function(Color)
     if library.currentTab then
         library.currentTab.button.TextColor3 = Color
@@ -2816,10 +2816,9 @@ local Backgrounds = {
     ["Floral"] = 5553946656,
     ["Flowers"] = 6071575925,
     ["Circles"] = 6071579801,
-    ["Hearts"] = 6073763717,
-    ["Blank"] = 0,
+    ["Hearts"] = 6073763717
 }
-library.MenuSection:AddList({text = "Background", flag = "UI Background", values = {"Floral", "Flowers", "Circles", "Hearts", "Blank"}, callback = function(Value)
+library.MenuSection:AddList({text = "Background", flag = "UI Background", max = 6, values = {"Floral", "Flowers", "Circles", "Hearts"}, callback = function(Value)
     if Backgrounds[Value] then
         library.main.Image = "rbxassetid://" .. Backgrounds[Value]
     end
@@ -2832,50 +2831,25 @@ library.MenuSection:AddSlider({text = "Tile Size", value = 150, min = 50, max = 
     library.main.TileSize = UDim2.new(0, Value, 0, Value)
 end})
 
---Config Section
-library.ConfigSection = library.SettingsColumn2:AddSection("Configs")
+library.ConfigSection = library.SettingsColumn1:AddSection("Configs")
 local r, g, b = library.round(library.flags["Menu Accent Color"])
 library.ConfigSection:AddBox({text = "Config Name", skipflag = true})
 library.ConfigSection:AddButton({text = "Create", callback = function()
-    if library.flags["Config Name"] ~= nil then
-        coroutine.wrap(function()
-            library:GetConfigs()
-            writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
-            library.options["Config List"]:AddValue(library.flags["Config Name"])
-            library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config Name"].."</font> config")
-        end)()
+    if library.flags["Config Name"] ~= nil and not library.flags["Config Name"]:match("auto_load") then
+        library:GetConfigs()
+        writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
+        library.options["Config List"]:AddValue(library.flags["Config Name"])
+        --library.options["Auto Load List"]:AddValue(library.flags["Config Name"])
+        library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config Name"].."</font> config")
         library.options["Config Name"]:SetValue("")
     else
-        library:SendNotification(3, "Invaild string.", 2)
+        library:SendNotification(5, "Invaild string.\nDo not use spaces", 2)
     end
 end})
 library.ConfigWarning = library:AddWarning({type = "confirm"})
-library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", value = "Default", values = library:GetConfigs(), callback = function(config)
-    if not library.flags["Auto Load"] then return end
-    library:LoadConfig(config)
-    coroutine.wrap(function()
-        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
-    end)()
-    if not configLoaded then configLoaded = true end
-end})
-configLoaded = false
-library.ConfigSection:AddToggle({text = "Auto Save", skipflag = true, state = true, callback = function(State)
-    library.options["Save"].main.Visible = not State
-    if State then
-        library:AddConnection(runService.RenderStepped, "Auto Save", function()
-            if library.flags["Auto Save"] then
-                if not configLoaded then return end
-                library:SaveConfig(library.flags["Config List"])
-            else
-                library.connections["Auto Save"]:Disconnect()
-            end
-        end)
-    end
-end})
-library.ConfigSection:AddToggle({text = "Auto Load", skipflag = true, state = true, callback = function(State)
-    library.options["Load"].main.Visible = not State
-end})
-library.ConfigSection:AddButton({text = "Save", tip = "Auto-saves every 5 seconds", callback = function()
+library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", value = "Default", values = library:GetConfigs()})
+
+library.ConfigSection:AddButton({text = "Save", callback = function()
     library.ConfigWarning.text = "Are you sure you want to save your current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
     if library.ConfigWarning:Show() then
         library:SaveConfig(library.flags["Config List"])
@@ -2894,19 +2868,30 @@ library.ConfigSection:AddButton({text = "Delete", callback = function()
     if library.ConfigWarning:Show() then
         local Config = library.flags["Config List"]
         if table.find(library:GetConfigs(), Config) and isfile(library.foldername .. "/" .. Config .. library.fileext) then
-            coroutine.wrap(function()
-                delfile(library.foldername .. "/" .. Config .. library.fileext)
-                library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
-            end)()
+            delfile(library.foldername .. "/" .. Config .. library.fileext)
+            library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
             library.options["Config List"]:RemoveValue(Config)
+            --library.options["Auto Load List"]:RemoveValue(Config)
         end
     end
 end})
 
+--[[library.AutoSection = library.SettingsColumn1:AddSection("Automatic")
+library.AutoSection:AddDivider("Auto Load")
+library.AutoSection:AddToggle({text = "Enabled", flag = "Auto Load", callback = function(State)
+    if State then
+        writefile(library.foldername .. "/auto_load" .. library.fileext, "return '"..library.flags["Auto Load List"].."'")
+    end
+end})
+library.AutoSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Auto Load List", value = "Default", values = library:GetConfigs(), callback = function(config)
+    if library.flags["Auto Load"] then
+        writefile(library.foldername .. "/auto_load.cfg", "return '"..config.."'")
+    end
+end})]]
+
 --Notification
 local LastNotification = 0
 function library:SendNotification(duration, message, status)
-    if library.silent == true and configLoaded then return end
     LastNotification = LastNotification + tick()
     if LastNotification < 0.2 or not library.base then return end
     LastNotification = 0
