@@ -510,15 +510,23 @@ library.createButton = function(option, parent)
             if library then
                 library.flags[option.flag] = true
             end
+        end
+    
+        if input.UserInputType.Name == "MouseMovement" then
+            if not library.warning and not library.slider then
+                option.title.BorderColor3 = library.flags["Menu Accent Color"]
+            end
             if option.tip then
                 library.tooltip.Text = option.tip
                 library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
-
+    end)
+    
+    option.title.InputChanged:Connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
-            if not library.warning and not library.slider then
-                option.title.BorderColor3 = library.flags["Menu Accent Color"]
+            if option.tip then
+                library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
             end
         end
     end)
