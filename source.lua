@@ -430,11 +430,12 @@ library.createToggle = function(option, parent)
     end
 
     if option.state ~= nil then
-        delay(1, function()
+        coroutine.wrap(function()
+            wait(1)
             if library then
                 option.callback(option.state)
             end
-        end)
+        end)()
     end
 
     setmetatable(option, {__newindex = function(t, i, v)
@@ -827,11 +828,12 @@ library.createSlider = function(option, parent)
             self.callback(value)
         end
     end
-    delay(1, function()
+    coroutine.wrap(function()
+        wait(1)
         if library then
             option:SetValue(option.value)
         end
-    end)
+    end)()
 end
 
 library.createList = function(option, parent)
@@ -1183,11 +1185,12 @@ library.createList = function(option, parent)
             self.callback(self.value)
         end
     end
-    delay(1, function()
+    coroutine.wrap(function()
+        wait(1)
         if library then
             option:SetValue(option.value)
         end
-    end)
+    end)()
 
     function option:Close()
         library.popup = nil
@@ -1328,11 +1331,12 @@ library.createBox = function(option, parent)
         end
     end
 
-    delay(1, function()
+    coroutine.wrap(function()
+        wait(1)
         if library then
             option:SetValue(option.value)
         end
-    end)
+    end)()
 end
 
 library.createColorPickerWindow = function(option)
@@ -1773,11 +1777,12 @@ library.createColor = function(option, parent)
         option:SetTrans(option.trans)
     end
 
-    delay(1, function()
+    coroutine.wrap(function()
+        wait(1)
         if library then
             option:SetColor(option.color)
         end
-    end)
+    end)()
 
     function option:Close()
         library.popup = nil
@@ -2775,7 +2780,10 @@ function library:Init()
 
     
     if not library.silent then
-        delay(1, function() self:Close() end)
+        coroutine.wrap(function()
+            wait(1)
+            self:Close()
+        end)()
     end
 
     --loaded notification
@@ -2988,7 +2996,8 @@ function library:SendNotification(duration, message, status)
     table.insert(library.theme, notification2)
 
     --remove
-    delay(duration, function()
+    coroutine.wrap(function()
+        wait(duration)
         if not library then return end
         library.notifications[notification] = nil
         --bump existing notifications down
@@ -3002,17 +3011,21 @@ function library:SendNotification(duration, message, status)
         notificationText.Visible = false
         tween.Completed:Wait()
         notification:Destroy()
-    end)
+    end)()
 end
 
 --local Loaded, LoadError = true
 
 --Loaded, LoadError = pcall(function() end)
 
-delay(1.5, function() 
-    --library:LoadConfig("Default")
-    --library:SendNotification(3, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>Default</font> config loaded")
-end)
+coroutine.wrap(function()
+    wait(1.5)
+    if not library:GetConfigs()[1] then return end
+    if library:AddWarning({type = "confirm", text = "Do you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"}):Show() then
+        library:LoadConfig(library.flags["Config List"])
+        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
+    end
+end)()
 
 --insert loaded notification
 
