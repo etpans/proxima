@@ -6,6 +6,7 @@ end
 
 repeat wait() until game:IsLoaded()
 
+--LIBRARY START
 --Services
 getgenv().runService = game:GetService("RunService")
 getgenv().textService = game:GetService("TextService")
@@ -16,16 +17,16 @@ if getgenv().library then
     getgenv().library:Unload()
 end
 
-local library = {tabs = {}, draggable = true, flags = {}, title = "proxima", notification = "proxima", open = false, mousestate = inputService.MouseIconEnabled, popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "proxima_configs", fileext = ".cfg", silent = false}
+local library = {tabs = {}, draggable = true, flags = {}, title = "proxima", open = false, mousestate = inputService.MouseIconEnabled, popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "proxima_configs", fileext = ".cfg"}
 getgenv().library = library
 
 --Locals
 local dragging, dragInput, dragStart, startPos, dragObject
 
-local blacklistedKeys = {
+local blacklistedKeys = { --add or remove keys if you find the need to
     Enum.KeyCode.Unknown, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D, Enum.KeyCode.Slash, Enum.KeyCode.Tab, Enum.KeyCode.Escape
 }
-local whitelistedMouseinputs = {
+local whitelistedMouseinputs = { --add or remove mouse inputs if you find the need to
     Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.MouseButton3
 }
 
@@ -38,22 +39,17 @@ library.round = function(num, bracket)
     elseif typeof(num) == "Color3" then
         return library.round(num.r * 255), library.round(num.g * 255), library.round(num.b * 255)
     else
-        if bracket then
-            local float = math.floor(num / bracket + 0.5) * bracket
-            return math.floor(float * 10) / 10
-        else
-            return num - num % (bracket or 1)
-        end
+        return num - num % (bracket or 1);
     end
 end
 
---[[From: https://devforum.roblox.com/t/how-to-create-a-simple-rainbow-effect-using-tweenService/221849/2
+--From: https://devforum.roblox.com/t/how-to-create-a-simple-rainbow-effect-using-tweenService/221849/2
 local chromaColor
-coroutine.wrap(function()
+spawn(function()
     while library and wait() do
         chromaColor = Color3.fromHSV(tick() % 6 / 6, 1, 1)
     end
-end)()]]
+end)
 
 function library:Create(class, properties)
     properties = properties or {}
@@ -70,7 +66,7 @@ end
 
 function library:AddConnection(connection, name, callback)
     callback = type(name) == "function" and name or callback
-    connection = connection:Connect(callback)
+    connection = connection:connect(callback)
     if name ~= callback then
         self.connections[name] = connection
     else
@@ -108,18 +104,18 @@ function library:LoadConfig(config)
             if option.hasInit then
                 if option.type ~= "button" and option.flag and not option.skipflag then
                     if option.type == "toggle" then
-                        coroutine.wrap(function() option:SetState(Config[option.flag] == 1) end)()
+                        spawn(function() option:SetState(Config[option.flag] == 1) end)
                     elseif option.type == "color" then
                         if Config[option.flag] then
-                            coroutine.wrap(function() option:SetColor(Config[option.flag]) end)()
+                            spawn(function() option:SetColor(Config[option.flag]) end)
                             if option.trans then
-                                coroutine.wrap(function() option:SetTrans(Config[option.flag .. " Transparency"]) end)()
+                                spawn(function() option:SetTrans(Config[option.flag .. " Transparency"]) end)
                             end
                         end
                     elseif option.type == "bind" then
-                        coroutine.wrap(function() option:SetKey(Config[option.flag]) end)()
+                        spawn(function() option:SetKey(Config[option.flag]) end)
                     else
-                        coroutine.wrap(function() option:SetValue(Config[option.flag]) end)()
+                        spawn(function() option:SetValue(Config[option.flag]) end)
                     end
                 end
             end
@@ -142,7 +138,9 @@ function library:SaveConfig(config)
                     Config[option.flag .. " Transparency"] = option.trans
                 end
             elseif option.type == "bind" then
-                Config[option.flag] = option.key
+                if option.key ~= "none" then
+                    Config[option.flag] = option.key
+                end
             elseif option.type == "list" then
                 Config[option.flag] = option.value
             else
@@ -160,7 +158,7 @@ function library:GetConfigs()
     end
     local files = {}
     local a = 0
-    for i, v in next, listfiles(self.foldername) do
+    for i,v in next, listfiles(self.foldername) do
         if v:sub(#v - #self.fileext + 1, #v) == self.fileext then
             a = a + 1
             v = v:gsub(self.foldername .. "\\", "")
@@ -367,7 +365,7 @@ library.createToggle = function(option, parent)
         Parent = option.interest
     })
 
-    option.interest.InputBegan:Connect(function(input)
+    option.interest.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             option:SetState(not option.state)
         end
@@ -390,7 +388,7 @@ library.createToggle = function(option, parent)
         end
     end)
 
-    option.interest.InputChanged:Connect(function(input)
+    option.interest.InputChanged:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
@@ -398,7 +396,7 @@ library.createToggle = function(option, parent)
         end
     end)
 
-    option.interest.InputEnded:Connect(function(input)
+    option.interest.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.style then
                 tickbox.ImageColor3 = Color3.new()
@@ -430,12 +428,11 @@ library.createToggle = function(option, parent)
     end
 
     if option.state ~= nil then
-        coroutine.wrap(function()
-            wait(1)
+        delay(1, function()
             if library then
                 option.callback(option.state)
             end
-        end)()
+        end)
     end
 
     setmetatable(option, {__newindex = function(t, i, v)
@@ -498,33 +495,32 @@ library.createButton = function(option, parent)
         Parent = option.title
     })
 
-    option.title.InputBegan:Connect(function(input)
+    option.title.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
-            coroutine.wrap(function()
-                if not library.flags["Menu Accent Color"] then return end
+            spawn(function()
                 tweenService:Create(option.title, TweenInfo.new(0.2), {BackgroundColor3 = library.flags["Menu Accent Color"]}):Play()
-                wait(.1)
+                wait(.2)
                 tweenService:Create(option.title, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
-            end)()
+            end)
             option.callback()
             
             if library then
                 library.flags[option.flag] = true
-            end
-        end
-    
-        if input.UserInputType.Name == "MouseMovement" then
-            if not library.warning and not library.slider then
-                option.title.BorderColor3 = library.flags["Menu Accent Color"]
             end
             if option.tip then
                 library.tooltip.Text = option.tip
                 library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
+
+        if input.UserInputType.Name == "MouseMovement" then
+            if not library.warning and not library.slider then
+                option.title.BorderColor3 = library.flags["Menu Accent Color"]
+            end
+        end
     end)
-    
-    option.title.InputChanged:Connect(function(input)
+
+    option.title.InputChanged:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
@@ -532,15 +528,7 @@ library.createButton = function(option, parent)
         end
     end)
 
-    option.title.InputChanged:Connect(function(input)
-        if input.UserInputType.Name == "MouseMovement" then
-            if option.tip then
-                library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
-            end
-        end
-    end)
-
-    option.title.InputEnded:Connect(function(input)
+    option.title.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             option.title.BorderColor3 = Color3.new()
             library.tooltip.Position = UDim2.new(2)
@@ -596,7 +584,7 @@ library.createBind = function(option, parent)
 
     local interest = option.sub and bindinput or option.main
     local inContact
-    interest.InputEnded:Connect(function(input)
+    interest.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             binding = true
             bindinput.Text = "[...]"
@@ -629,7 +617,7 @@ library.createBind = function(option, parent)
     end)
 
     library:AddConnection(inputService.InputEnded, function(input)
-        if option.key ~= "None" then
+        if option.key ~= "none" then
             if input.KeyCode.Name == option.key or input.UserInputType.Name == option.key then
                 if Loop then
                     Loop:Disconnect()
@@ -646,11 +634,11 @@ library.createBind = function(option, parent)
         if Loop then Loop:Disconnect() library.flags[option.flag] = false option.callback(true, 0) end
         self.key = (key and key.Name) or key or self.key
         if self.key == "Backspace" then
-            self.key = "None"
-            bindinput.Text = "[None]"
+            self.key = "none"
+            bindinput.Text = "[NONE]"
         else
             local a = self.key
-            if self.key:match("Mouse") then
+            if self.key:match"Mouse" then
                 a = self.key:gsub("Button", ""):gsub("Mouse", "M")
             elseif self.key:match"Shift" or self.key:match"Alt" or self.key:match"Control" then
                 a = self.key:gsub("Left", "L"):gsub("Right", "R")
@@ -751,36 +739,36 @@ library.createSlider = function(option, parent)
     end
 
     local manualInput
-    option.title.Focused:Connect(function()
+    option.title.Focused:connect(function()
         if not manualInput then
             option.title:ReleaseFocus()
             option.title.Text = (option.text == "nil" and "" or option.text .. ": ") .. option.value .. option.suffix
         end
     end)
 
-    option.title.FocusLost:Connect(function()
+    option.title.FocusLost:connect(function()
         option.slider.BorderColor3 = Color3.new()
         if manualInput then
             if tonumber(option.title.Text) then
                 option:SetValue(tonumber(option.title.Text))
             else
                 option.title.Text = (option.text == "nil" and "" or option.text .. ": ") .. option.value .. option.suffix
-                library:SendNotification(2, "<font color='rgb(204, 52, 51)'>Error:</font> Input a valid integer")
             end
         end
         manualInput = false
     end)
 
     local interest = (option.sub or option.textpos) and option.slider or option.main
-    interest.InputBegan:Connect(function(input)
+    interest.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
-            library.slider = option
-            option.slider.BorderColor3 = library.flags["Menu Accent Color"]
-            option:SetValue(option.min + ((input.Position.X - option.slider.AbsolutePosition.X) / option.slider.AbsoluteSize.X) * (option.max - option.min))
-        end
-        if input.UserInputType.Name == "MouseButton2" then
-            manualInput = true
-            option.title:CaptureFocus()
+            if inputService:IsKeyDown(Enum.KeyCode.LeftControl) or inputService:IsKeyDown(Enum.KeyCode.RightControl) then
+                manualInput = true
+                option.title:CaptureFocus()
+            else
+                library.slider = option
+                option.slider.BorderColor3 = library.flags["Menu Accent Color"]
+                option:SetValue(option.min + ((input.Position.X - option.slider.AbsolutePosition.X) / option.slider.AbsoluteSize.X) * (option.max - option.min))
+            end
         end
         if input.UserInputType.Name == "MouseMovement" then
             if not library.warning and not library.slider then
@@ -793,7 +781,7 @@ library.createSlider = function(option, parent)
         end
     end)
 
-    interest.InputChanged:Connect(function(input)
+    interest.InputChanged:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
@@ -801,7 +789,7 @@ library.createSlider = function(option, parent)
         end
     end)
 
-    interest.InputEnded:Connect(function(input)
+    interest.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             library.tooltip.Position = UDim2.new(2)
             if option ~= library.slider then
@@ -828,12 +816,11 @@ library.createSlider = function(option, parent)
             self.callback(value)
         end
     end
-    coroutine.wrap(function()
-        wait(1)
+    delay(1, function()
         if library then
             option:SetValue(option.value)
         end
-    end)()
+    end)
 end
 
 library.createList = function(option, parent)
@@ -944,8 +931,8 @@ library.createList = function(option, parent)
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        ScrollBarImageColor3 = library.flags["Menu Accent Color"],
-        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Color3.new(),
+        ScrollBarThickness = 3,
         ScrollingDirection = Enum.ScrollingDirection.Y,
         VerticalScrollBarInset = Enum.ScrollBarInset.Always,
         TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
@@ -988,13 +975,13 @@ library.createList = function(option, parent)
     })
 
     local valueCount = 0
-    layout.Changed:Connect(function()
+    layout.Changed:connect(function()
         option.holder.Size = UDim2.new(0, option.listvalue.AbsoluteSize.X, 0, 8 + (valueCount > option.max and (-2 + (option.max * 22)) or layout.AbsoluteContentSize.Y))
         option.content.CanvasSize = UDim2.new(0, 0, 0, 8 + layout.AbsoluteContentSize.Y)
     end)
     local interest = option.sub and option.listvalue or option.main
 
-    option.listvalue.InputBegan:Connect(function(input)
+    option.listvalue.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             if library.popup == option then library.popup:Close() return end
             if library.popup then
@@ -1015,7 +1002,7 @@ library.createList = function(option, parent)
         end
     end)
 
-    option.listvalue.InputEnded:Connect(function(input)
+    option.listvalue.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if not option.open then
                 option.listvalue.BorderColor3 = Color3.new()
@@ -1023,7 +1010,7 @@ library.createList = function(option, parent)
         end
     end)
 
-    interest.InputBegan:Connect(function(input)
+    interest.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Text = option.tip
@@ -1032,7 +1019,7 @@ library.createList = function(option, parent)
         end
     end)
 
-    interest.InputChanged:Connect(function(input)
+    interest.InputChanged:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
@@ -1040,7 +1027,7 @@ library.createList = function(option, parent)
         end
     end)
 
-    interest.InputEnded:Connect(function(input)
+    interest.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             library.tooltip.Position = UDim2.new(2)
         end
@@ -1085,18 +1072,10 @@ library.createList = function(option, parent)
             Visible = self.multiselect and self.value[value] or self.value == value,
             Parent = label
         })
-
-        local hoverOverlay = library:Create("Frame", {
-            ZIndex = 4,	
-            Size = UDim2.new(1, 0, 1, 0),
-            BackgroundTransparency = 0.8,
-            Visible = false,
-            Parent = label
-        })
         selected = selected or self.value == value and labelOverlay
         table.insert(library.theme, labelOverlay)
 
-        label.InputBegan:Connect(function(input)
+        label.InputBegan:connect(function(input)
             if input.UserInputType.Name == "MouseButton1" then
                 if self.multiselect then
                     self.value[value] = not self.value[value]
@@ -1105,23 +1084,6 @@ library.createList = function(option, parent)
                     self:SetValue(value)
                     self:Close()
                 end
-            end
-        end)
-
-        label.InputBegan:Connect(function(input)
-            if input.UserInputType.Name == "MouseButton1" then
-                option.listvalue.BorderColor3 = Color3.new()
-            end
-            if input.UserInputType.Name == "MouseMovement" then
-                hoverOverlay.Visible = true
-                hoverOverlay.BackgroundTransparency = 0.8
-            end
-        end)
-
-        label.InputEnded:Connect(function(input)
-            if input.UserInputType.Name == "MouseMovement" then
-                hoverOverlay.Visible = false
-                hoverOverlay.BackgroundTransparency = 0.8
             end
         end)
     end
@@ -1152,7 +1114,7 @@ library.createList = function(option, parent)
     function option:SetValue(value, nocallback)
         if self.multiselect and typeof(value) ~= "table" then
             value = {}
-            for i, v in next, self.values do
+            for i,v in next, self.values do
                 value[v] = false
             end
         end
@@ -1185,18 +1147,18 @@ library.createList = function(option, parent)
             self.callback(self.value)
         end
     end
-    coroutine.wrap(function()
-        wait(1)
+    delay(1, function()
         if library then
             option:SetValue(option.value)
         end
-    end)()
+    end)
 
     function option:Close()
         library.popup = nil
         option.arrow.Rotation = 90
         self.open = false
         option.holder.Visible = false
+        option.listvalue.BorderColor3 = Color3.new()
     end
 
     return option
@@ -1278,16 +1240,16 @@ library.createBox = function(option, parent)
         Parent = option.holder
     })
 
-    inputvalue.FocusLost:Connect(function(enter)
+    inputvalue.FocusLost:connect(function(enter)
         option.holder.BorderColor3 = Color3.new()
         option:SetValue(inputvalue.Text, enter)
     end)
 
-    inputvalue.Focused:Connect(function()
+    inputvalue.Focused:connect(function()
         option.holder.BorderColor3 = library.flags["Menu Accent Color"]
     end)
 
-    inputvalue.InputBegan:Connect(function(input)
+    inputvalue.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             inputvalue.Text = ""
         end
@@ -1302,7 +1264,7 @@ library.createBox = function(option, parent)
         end
     end)
 
-    inputvalue.InputChanged:Connect(function(input)
+    inputvalue.InputChanged:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
@@ -1310,7 +1272,7 @@ library.createBox = function(option, parent)
         end
     end)
 
-    inputvalue.InputEnded:Connect(function(input)
+    inputvalue.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if not inputvalue:IsFocused() then
                 option.holder.BorderColor3 = Color3.new()
@@ -1320,9 +1282,8 @@ library.createBox = function(option, parent)
     end)
 
     function option:SetValue(value, enter)
-        if tostring(value):match("^%s*$") then
-            inputvalue.Text = ""
-            library.flags[self.flag] = nil
+        if tostring(value) == "" then
+            inputvalue.Text = self.value
         else
             library.flags[self.flag] = tostring(value)
             self.value = tostring(value)
@@ -1330,13 +1291,11 @@ library.createBox = function(option, parent)
             self.callback(value, enter)
         end
     end
-
-    coroutine.wrap(function()
-        wait(1)
+    delay(1, function()
         if library then
             option:SetValue(option.value)
         end
-    end)()
+    end)
 end
 
 library.createColorPickerWindow = function(option)
@@ -1410,7 +1369,7 @@ library.createColorPickerWindow = function(option)
 
     option.hexBox = option.rgbBox:Clone()
     option.hexBox.Position = UDim2.new(0, 6, 0, 238)
-    --option.hexBox.Size = UDim2.new(0, (option.mainHolder.AbsoluteSize.X/2 - 10), 0, 20)
+    -- option.hexBox.Size = UDim2.new(0, (option.mainHolder.AbsoluteSize.X/2 - 10), 0, 20)
     option.hexBox.Parent = option.mainHolder
     option.hexInput = option.hexBox.TextBox;
 
@@ -1474,14 +1433,14 @@ library.createColorPickerWindow = function(option)
             Parent = transMain
         })
 
-        transMain.InputBegan:Connect(function(Input)
+        transMain.InputBegan:connect(function(Input)
             if Input.UserInputType.Name == "MouseButton1" then
                 editingtrans = true
                 option:SetTrans(1 - ((Input.Position.Y - transMain.AbsolutePosition.Y) / transMain.AbsoluteSize.Y))
             end
         end)
 
-        transMain.InputEnded:Connect(function(Input)
+        transMain.InputEnded:connect(function(Input)
             if Input.UserInputType.Name == "MouseButton1" then
                 editingtrans = false
             end
@@ -1520,7 +1479,7 @@ library.createColorPickerWindow = function(option)
         Parent = hueMain
     })
 
-    hueMain.InputBegan:Connect(function(Input)
+    hueMain.InputBegan:connect(function(Input)
         if Input.UserInputType.Name == "MouseButton1" then
             editinghue = true
             X = (hueMain.AbsolutePosition.X + hueMain.AbsoluteSize.X) - hueMain.AbsolutePosition.X
@@ -1529,7 +1488,7 @@ library.createColorPickerWindow = function(option)
         end
     end)
 
-    hueMain.InputEnded:Connect(function(Input)
+    hueMain.InputEnded:connect(function(Input)
         if Input.UserInputType.Name == "MouseButton1" then
             editinghue = false
         end
@@ -1556,7 +1515,7 @@ library.createColorPickerWindow = function(option)
         Parent = satval
     })
 
-    satval.InputBegan:Connect(function(Input)
+    satval.InputBegan:connect(function(Input)
         if Input.UserInputType.Name == "MouseButton1" then
             editingsatval = true
             X = (satval.AbsolutePosition.X + satval.AbsoluteSize.X) - satval.AbsolutePosition.X
@@ -1585,7 +1544,7 @@ library.createColorPickerWindow = function(option)
         end
     end)
 
-    satval.InputEnded:Connect(function(Input)
+    satval.InputEnded:connect(function(Input)
         if Input.UserInputType.Name == "MouseButton1" then
             editingsatval = false
         end
@@ -1595,7 +1554,7 @@ library.createColorPickerWindow = function(option)
     option.hexInput.Text = string.format("#%02x%02x%02x", r, g, b)
     option.rgbInput.Text = table.concat({r, g, b}, ",")
 
-    option.rgbInput.FocusLost:Connect(function()
+    option.rgbInput.FocusLost:connect(function()
         local r, g, b = option.rgbInput.Text:gsub("%s+", ""):match("(%d+),(%d+),(%d+)")
         if r and g and b then
             local color = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
@@ -1606,7 +1565,7 @@ library.createColorPickerWindow = function(option)
         option.rgbInput.Text = table.concat({r, g, b}, ",")
     end)
 
-    option.hexInput.FocusLost:Connect(function()
+    option.hexInput.FocusLost:connect(function()
         local r, g, b = option.hexInput.Text:match("#?(..)(..)(..)")
         if r and g and b then
             local color = Color3.fromRGB(tonumber("0x"..r), tonumber("0x"..g), tonumber("0x"..b))
@@ -1708,7 +1667,7 @@ library.createColor = function(option, parent)
         option.visualize.AutoButtonColor = false
     end
 
-    interest.InputBegan:Connect(function(input)
+    interest.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             if not option.mainHolder then library.createColorPickerWindow(option) end
             if library.popup == option then library.popup:Close() return end
@@ -1731,7 +1690,7 @@ library.createColor = function(option, parent)
         end
     end)
 
-    interest.InputChanged:Connect(function(input)
+    interest.InputChanged:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Position = UDim2.new(0, input.Position.X + 26, 0, input.Position.Y + 36)
@@ -1739,7 +1698,7 @@ library.createColor = function(option, parent)
         end
     end)
 
-    interest.InputEnded:Connect(function(input)
+    interest.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseMovement" then
             if not option.open then
                 option.visualize.BorderColor3 = Color3.new()
@@ -1777,17 +1736,17 @@ library.createColor = function(option, parent)
         option:SetTrans(option.trans)
     end
 
-    coroutine.wrap(function()
-        wait(1)
+    delay(1, function()
         if library then
             option:SetColor(option.color)
         end
-    end)()
+    end)
 
     function option:Close()
         library.popup = nil
         self.open = false
         self.mainHolder.Visible = false
+        option.visualize.BorderColor3 = Color3.new()
     end
 end
 
@@ -1942,7 +1901,7 @@ function library:AddTab(title, pos)
                 option = typeof(option) == "table" and option or {}
                 option.section = self
                 option.text = tostring(option.text)
-                option.key = (option.key and option.key.Name) or option.key or "None"
+                option.key = (option.key and option.key.Name) or option.key or "none"
                 option.nomouse = typeof(option.nomouse) == "boolean" and option.nomouse or false
                 option.mode = typeof(option.mode) == "string" and (option.mode == "toggle" or option.mode == "hold" and option.mode) or "toggle"
                 option.callback = typeof(option.callback) == "function" and option.callback or function() end
@@ -2021,7 +1980,7 @@ function library:AddTab(title, pos)
                 --option.groupbox = (not option.multiselect) and (typeof(option.groupbox) == "boolean" and option.groupbox or false)
                 option.value = option.multiselect and (typeof(option.value) == "table" and option.value or {}) or tostring(option.value or option.values[1] or "")
                 if option.multiselect then
-                    for i, v in next, option.values do
+                    for i,v in next, option.values do
                         option.value[v] = false
                     end
                 end
@@ -2093,6 +2052,8 @@ function library:AddTab(title, pos)
                 else
                     option.Init = library.createBox
                 end
+
+                return option
             end
 
             function section:AddColor(option)
@@ -2205,7 +2166,7 @@ function library:AddTab(title, pos)
                     Parent = self.main
                 })
 
-                layout.Changed:Connect(function()
+                layout.Changed:connect(function()
                     self.main.Size = UDim2.new(1, 0, 0, layout.AbsoluteContentSize.Y + 16)
                 end)
 
@@ -2255,7 +2216,7 @@ function library:AddTab(title, pos)
                 Parent = self.main
             })
 
-            layout.Changed:Connect(function()
+            layout.Changed:connect(function()
                 self.main.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 14)
             end)
 
@@ -2292,7 +2253,7 @@ function library:AddTab(title, pos)
         })
         library.tabSize = library.tabSize + size
 
-        self.button.InputBegan:Connect(function(input)
+        self.button.InputBegan:connect(function(input)
             if input.UserInputType.Name == "MouseButton1" then
                 library:selectTab(self)
             end
@@ -2416,33 +2377,15 @@ function library:AddWarning(warning)
                     Parent = button1
                 })
 
-                button.InputBegan:Connect(function(input)
+                button.InputBegan:connect(function(input)
                     if input.UserInputType.Name == "MouseButton1" then
                         answer = true
                     end
-                    if input.UserInputType.Name == "MouseMovement" then
-                        button.BorderColor3 = library.flags["Menu Accent Color"]
-                    end
                 end)
 
-                button.InputEnded:Connect(function(input)
-                    if input.UserInputType.Name == "MouseMovement" then
-                        button.BorderColor3 = Color3.new()
-                    end
-                end)
-
-                button1.InputBegan:Connect(function(input)
+                button1.InputBegan:connect(function(input)
                     if input.UserInputType.Name == "MouseButton1" then
                         answer = false
-                    end
-                    if input.UserInputType.Name == "MouseMovement" then
-                        button1.BorderColor3 = library.flags["Menu Accent Color"]
-                    end
-                end)
-
-                button1.InputEnded:Connect(function(input)
-                    if input.UserInputType.Name == "MouseMovement" then
-                        button1.BorderColor3 = Color3.new()
                     end
                 end)
             else
@@ -2480,7 +2423,7 @@ function library:AddWarning(warning)
                     Parent = button
                 })
 
-                button.InputBegan:Connect(function(input)
+                button.InputBegan:connect(function(input)
                     if input.UserInputType.Name == "MouseButton1" then
                         answer = true
                     end
@@ -2614,10 +2557,9 @@ function library:Init()
         Thickness = 1,
         Visible = true
     })
-    
+
     self.tooltip = self:Create("TextLabel", {
         ZIndex = 2,
-        Position = UDim2.new(-1, 0, -1, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         TextSize = 15,
@@ -2656,7 +2598,7 @@ function library:Init()
         Parent = self.main
     })
 
-    self.top.InputBegan:Connect(function(input)
+    self.top.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             dragObject = self.main
             dragging = true
@@ -2665,24 +2607,24 @@ function library:Init()
             if library.popup then library.popup:Close() end
         end
     end)
-    self.top.InputChanged:Connect(function(input)
+    self.top.InputChanged:connect(function(input)
         if dragging and input.UserInputType.Name == "MouseMovement" then
             dragInput = input
         end
     end)
-    self.top.InputEnded:Connect(function(input)
+    self.top.InputEnded:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             dragging = false
         end
     end)
-    self.close.InputBegan:Connect(function(input)
+    self.close.InputBegan:connect(function(input)
         if input.UserInputType.Name == "MouseButton1" then
             library:Close()
             local r, g, b = library.round(library.flags["Menu Accent Color"])
-            library:SendNotification(5, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>proxima</font> minimized\n Press '"..tostring(library.options["UI Toggle"].key).."' to show")
+            library:SendNotification(5, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>proxima</font> minimized\n Press '"..tostring(close.key).."' to show")
         end
     end)
-    
+
     function self:selectTab(tab)
         if self.currentTab == tab then return end
         if library.popup then library.popup:Close() end
@@ -2702,7 +2644,7 @@ function library:Init()
         end
     end
 
-    coroutine.wrap(function()
+    spawn(function()
         while library do
             wait(1)
             local Configs = self:GetConfigs()
@@ -2717,7 +2659,7 @@ function library:Init()
                 end
             end
         end
-    end)()
+    end)
 
     for _, tab in next, self.tabs do
         if tab.canInit then
@@ -2741,7 +2683,7 @@ function library:Init()
                 local mouse = inputService:GetMouseLocation()
                 local MousePos = Vector2.new(mouse.X, mouse.Y)
                 self.cursor.PointA = MousePos
-                self.cursor.PointB = MousePos + Vector2.new(0, 11)
+                self.cursor.PointB = MousePos + Vector2.new(0, 12)
                 self.cursor.PointC = MousePos + Vector2.new(7, 8)
             end
             if self.slider then
@@ -2778,19 +2720,15 @@ function library:Init()
         return Old_new(t, i, v)
     end)
 
-    
-    if not library.silent then
-        coroutine.wrap(function()
-            wait(1)
-            self:Close()
-        end)()
+    if not getgenv().silent then
+        delay(1, function() self:Close() end)
     end
 
     --loaded notification
-    if not library.silent then
+    if not getgenv().silent then
         --if Loaded then
             local r, g, b = library.round(library.flags["Menu Accent Color"])
-            library:SendNotification(5, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.title.."</font> loaded successfully")
+            library:SendNotification(5, "Loaded <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.title.."</font> successfully")
         --else
         --    local r, g, b = library.round(library.flags["Menu Accent Color"])
         --    library:SendNotification(5, "Failed to load "..library.title.." (error copied to clipboard)")
@@ -2799,28 +2737,21 @@ function library:Init()
     end
 end
 
---Setting tab
-library.SettingsTab = library:AddTab("Settings", math.huge)
+--setting tab
+library.SettingsTab = library:AddTab("Settings", 100)
 library.SettingsColumn = library.SettingsTab:AddColumn()
 library.SettingsColumn1 = library.SettingsTab:AddColumn()
 
-library.MainSection = library.SettingsColumn:AddSection("Main")
-library.MainSection:AddButton({text = "Unload Cheat", nomouse = true, callback = function()
+library.SettingsMain = library.SettingsColumn:AddSection"Main"
+library.SettingsMain:AddButton({text = "Unload Cheat", nomouse = true, callback = function()
     library:Unload()
     getgenv().proxima = nil
 end})
-library.MainSection:AddBind({text = "Panic Key", callback = library.options["Unload Cheat"].callback})
---[[library.MainSection:AddToggle({text = "Silent", callback = function(State)
-    if State then
-        library.silent = true
-    else
-        library.silent = false
-    end
-end})]]
+library.SettingsMain:AddBind({text = "Panic Key", callback = library.options["Unload Cheat"].callback})
 
-library.MenuSection = library.SettingsColumn:AddSection("Menu")
-library.MenuSection:AddBind({text = "Open / Close", flag = "UI Toggle", nomouse = true, key = "F8", callback = function() library:Close() end})
-library.MenuSection:AddColor({text = "Accent Color", flag = "Menu Accent Color", color = Color3.fromRGB(189, 147, 249), callback = function(Color)
+library.SettingsMenu = library.SettingsColumn:AddSection"Menu"
+close = library.SettingsMenu:AddBind({text = "Open / Close", flag = "UI Toggle", nomouse = true, key = "BackSlash", callback = function() library:Close() end})
+library.SettingsMenu:AddColor({text = "Accent Color", flag = "Menu Accent Color", color = Color3.fromRGB(189, 147, 249), callback = function(Color)
     if library.currentTab then
         library.currentTab.button.TextColor3 = Color
     end
@@ -2834,7 +2765,7 @@ local Backgrounds = {
     ["Circles"] = 6071579801,
     ["Hearts"] = 6073763717
 }
-library.MenuSection:AddList({text = "Background", flag = "UI Background", max = 6, values = {"Floral", "Flowers", "Circles", "Hearts"}, callback = function(Value)
+library.SettingsMenu:AddList({text = "Background", flag = "UI Background", max = 6, values = {"Floral", "Flowers", "Circles", "Hearts"}, callback = function(Value)
     if Backgrounds[Value] then
         library.main.Image = "rbxassetid://" .. Backgrounds[Value]
     end
@@ -2843,71 +2774,48 @@ end}):AddColor({flag = "Menu Background Color", color = Color3.new(), callback =
 end, trans = 1, calltrans = function(Value)
     library.main.ImageTransparency = 1 - Value
 end})
-library.MenuSection:AddSlider({text = "Tile Size", value = 150, min = 50, max = 500, callback = function(Value)
+library.SettingsMenu:AddSlider({text = "Tile Size", value = 100, min = 50, max = 500, callback = function(Value)
     library.main.TileSize = UDim2.new(0, Value, 0, Value)
 end})
 
-library.ConfigSection = library.SettingsColumn1:AddSection("Configs")
-local r, g, b = library.round(library.flags["Menu Accent Color"])
+library.ConfigSection = library.SettingsColumn1:AddSection"Configs"
 library.ConfigSection:AddBox({text = "Config Name", skipflag = true})
 library.ConfigSection:AddButton({text = "Create", callback = function()
-    if library.flags["Config Name"] ~= nil and not library.flags["Config Name"]:match("auto_load") then
-        library:GetConfigs()
-        writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
-        library.options["Config List"]:AddValue(library.flags["Config Name"])
-        --library.options["Auto Load List"]:AddValue(library.flags["Config Name"])
-        library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config Name"].."</font> config")
-        library.options["Config Name"]:SetValue("")
-    else
-        library:SendNotification(5, "Invaild string.\nDo not use spaces", 2)
-    end
+    library:GetConfigs()
+    writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
+    library.options["Config List"]:AddValue(library.flags["Config Name"])
 end})
 library.ConfigWarning = library:AddWarning({type = "confirm"})
-library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", value = "Default", values = library:GetConfigs()})
-
+library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", values = library:GetConfigs()})
 library.ConfigSection:AddButton({text = "Save", callback = function()
-    library.ConfigWarning.text = "Are you sure you want to save your current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
+    local r, g, b = library.round(library.flags["Menu Accent Color"])
+    library.ConfigWarning.text = "Are you sure you want to save the current settings to config <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>?"
     if library.ConfigWarning:Show() then
         library:SaveConfig(library.flags["Config List"])
-        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been saved")
     end
 end})
 library.ConfigSection:AddButton({text = "Load", callback = function()
-    library.ConfigWarning.text = "Are you sure you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
+    local r, g, b = library.round(library.flags["Menu Accent Color"])
+    library.ConfigWarning.text = "Are you sure you want to load config <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>?"
     if library.ConfigWarning:Show() then
         library:LoadConfig(library.flags["Config List"])
-        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
     end
 end})
 library.ConfigSection:AddButton({text = "Delete", callback = function()
-    library.ConfigWarning.text = "Are you sure you want to delete <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
-    if library.ConfigWarning:Show() then
+    local r, g, b = library.round(library.flags["Menu Accent Color"])
+    library.ConfigWarning.text = "Are you sure you want to delete config <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font>?"
+    if ConfigWarning:Show() then
         local Config = library.flags["Config List"]
         if table.find(library:GetConfigs(), Config) and isfile(library.foldername .. "/" .. Config .. library.fileext) then
-            delfile(library.foldername .. "/" .. Config .. library.fileext)
-            library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
             library.options["Config List"]:RemoveValue(Config)
-            --library.options["Auto Load List"]:RemoveValue(Config)
+            delfile(library.foldername .. "/" .. Config .. library.fileext)
         end
     end
 end})
 
---[[library.AutoSection = library.SettingsColumn1:AddSection("Automatic")
-library.AutoSection:AddDivider("Auto Load")
-library.AutoSection:AddToggle({text = "Enabled", flag = "Auto Load", callback = function(State)
-    if State then
-        writefile(library.foldername .. "/auto_load" .. library.fileext, "return '"..library.flags["Auto Load List"].."'")
-    end
-end})
-library.AutoSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Auto Load List", value = "Default", values = library:GetConfigs(), callback = function(config)
-    if library.flags["Auto Load"] then
-        writefile(library.foldername .. "/auto_load.cfg", "return '"..config.."'")
-    end
-end})]]
-
---Notification
+--notification
 local LastNotification = 0
-function library:SendNotification(duration, message, status)
+function library:SendNotification(duration, message)
     LastNotification = LastNotification + tick()
     if LastNotification < 0.2 or not library.base then return end
     LastNotification = 0
@@ -2917,23 +2825,9 @@ function library:SendNotification(duration, message, status)
     else
         duration = message
     end
+    message = message and tostring(message) or "Empty"
 
-    if status then
-        status = tonumber(status) or nil
-        message = message and tostring(message) or "Empty"
-        if message ~= "Empty" then
-            if status == 1 then
-                message = "<font color='rgb(245, 240, 112)'>Warning:</font> "..message
-            elseif status == 2 then
-                message = "<font color='rgb(204, 52, 51)'>Error:</font> "..message
-            elseif status == 3 then
-                message = "<font color='rgb(124, 197, 111)'>Success:</font> "..message
-            elseif status == 4 then
-                message = "<font color='rgb(104, 187, 234)'>Information:</font> "..message
-            end
-        end
-    end
-    
+    --create the thing
     local notification = library:Create("Frame", {
         AnchorPoint = Vector2.new(1, 1),
         Size = UDim2.new(0, 0, 0, 80),
@@ -2961,47 +2855,43 @@ function library:SendNotification(duration, message, status)
     tweenService:Create(notificationText, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.3), {TextTransparency = 0}):Play()
 
     --bump existing notifications
-    for _, notification in next, library.notifications do
+    for _,notification in next, library.notifications do
         notification:TweenPosition(UDim2.new(1, -5, 1, notification.Position.Y.Offset - 85), "Out", "Quad", 0.2)
     end
     library.notifications[notification] = notification
 
-    wait(.4)
+    wait(0.4)
 
-    notification1 = library:Create("Frame", {
+    --create other things
+    local notification1 = library:Create("Frame", {
         Position = UDim2.new(0, 0, 0, 20),
         Size = UDim2.new(0, 0, 0, 1),
         BackgroundColor3 = library.flags["Menu Accent Color"],
         BorderSizePixel = 0,
         Parent = notification
-    })
+    }):TweenSize(UDim2.new(1, 0, 0, 1), "Out", "Linear", duration)
 
-    notification2 = library:Create("TextLabel", {
+    local notification2 = tweenService:Create(library:Create("TextLabel", {
         Position = UDim2.new(0, 4, 0, 1),
         Size = UDim2.new(0, 70, 0, 16),
         BackgroundTransparency = 1,
-        Text = library.notification,
+        Text = "proxima",
         Font = Enum.Font.Gotham,
         TextColor3 = library.flags["Menu Accent Color"],
         TextSize = 16,
         TextTransparency = 1,
-        TextXAlignment = "Left",
         Parent = notification
-    })
-
-    notification1:TweenSize(UDim2.new(1, 0, 0, 1), "Out", "Linear", duration)
-    tweenService:Create(notification2, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+    }), TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
     table.insert(library.theme, notification1)
     table.insert(library.theme, notification2)
 
     --remove
-    coroutine.wrap(function()
-        wait(duration)
+    delay(duration, function()
         if not library then return end
         library.notifications[notification] = nil
         --bump existing notifications down
-        for _, otherNotif in next, library.notifications do
+        for _,otherNotif in next, library.notifications do
             if otherNotif.Position.Y.Offset < notification.Position.Y.Offset then
                 otherNotif:TweenPosition(UDim2.new(1, -5, 1, otherNotif.Position.Y.Offset + 85), "Out", "Quad", 0.2)
             end
@@ -3011,26 +2901,19 @@ function library:SendNotification(duration, message, status)
         notificationText.Visible = false
         tween.Completed:Wait()
         notification:Destroy()
-    end)()
+    end)
 end
 
 --local Loaded, LoadError = true
 
 --Loaded, LoadError = pcall(function() end)
 
-coroutine.wrap(function()
-    wait(1.5)
-    if not library:GetConfigs()[1] then return end
-    if library:AddWarning({type = "confirm", text = "Do you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"}):Show() then
-        library:LoadConfig(library.flags["Config List"])
-        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
-    end
-end)()
+delay(1, function() library:LoadConfig(tostring(getgenv().autoload)) end)
 
 --insert loaded notification
 
 if not library:GetConfigs()[1] then
-    writefile(library.foldername .. "/Default" .. library.fileext, loadstring(game:HttpGet("https://raw.githubusercontent.com/2kbyte/public/main/default_config.lua", true))())
+    writefile(library.foldername .. "/Default" .. library.fileext, loadstring(game:HttpGet("https://raw.githubusercontent.com/2kbyte/public/main/uwuware-lib-fork.lua/default_config.lua", true))())
     library.options["Config List"]:AddValue("Default")
     library:LoadConfig("Default")
 end
