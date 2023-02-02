@@ -1,33 +1,30 @@
-local assets = {6183930112, 6071575925, 6071579801, 6073763717, 3570695787, 5941353943, 4155801252, 2454009026, 5553946656, 4155801252, 4918373417, 3570695787, 2592362371}
-local cprovider = Game:GetService("ContentProvider")
-for _, v in next, assets do
-	cprovider:Preload("rbxassetid://" .. v)
-end
-
 repeat wait() until game:IsLoaded()
 
+local assets = {6183930112, 6071575925, 6071579801, 6073763717, 3570695787, 5941353943, 4155801252, 2454009026, 5553946656, 4155801252, 4918373417, 3570695787, 2592362371}
+for i, v in next, assets do
+    game:GetService("ContentProvider"):Preload("rbxassetid://" .. v)
+end
+
 --Services
-getgenv().runService = game:GetService("RunService")
-getgenv().textService = game:GetService("TextService")
-getgenv().inputService = game:GetService("UserInputService")
-getgenv().tweenService = game:GetService("TweenService")
+getgenv().RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
 
 if getgenv().library then
     getgenv().library:Unload()
 end
 
-local library = {tabs = {}, draggable = true, flags = {}, title = "proxima", notification = "proxima", open = false, mousestate = inputService.MouseIconEnabled, popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "proxima_configs", fileext = ".cfg", silent = false}
+local library = {tabs = {}, draggable = true, flags = {}, title = "proxima", notification = "proxima", open = false, mousestate = UserInputService.MouseIconEnabled, popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "proxima_configs", fileext = ".cfg", silent = false}
+
 getgenv().library = library
 
 --Locals
-local dragging, dragInput, dragStart, startPos, dragObject
-
 local blacklistedKeys = {
-    Enum.KeyCode.Unknown, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D, Enum.KeyCode.Slash, Enum.KeyCode.Tab, Enum.KeyCode.Escape
+    Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.MouseButton3, Enum.KeyCode.Unknown, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D, Enum.KeyCode.Slash, Enum.KeyCode.Tab, Enum.KeyCode.Escape
 }
-local whitelistedMouseinputs = {
-    Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.MouseButton3
-}
+local whitelistedMouseinputs = {}
 
 --Functions
 library.round = function(num, bracket)
@@ -37,34 +34,24 @@ library.round = function(num, bracket)
         return Vector3.new(library.round(num.X), library.round(num.Y), library.round(num.Z))
     elseif typeof(num) == "Color3" then
         return library.round(num.r * 255), library.round(num.g * 255), library.round(num.b * 255)
+    end
+    if bracket then
+        return math.floor(math.floor(num / bracket + 0.5) * bracket * 10) / 10
     else
-        if bracket then
-            local float = math.floor(num / bracket + 0.5) * bracket
-            return math.floor(float * 10) / 10
-        else
-            return num - num % (bracket or 1)
-        end
+        return num - num % (bracket or 1)
     end
 end
-
---[[From: https://devforum.roblox.com/t/how-to-create-a-simple-rainbow-effect-using-tweenService/221849/2
-local chromaColor
-coroutine.wrap(function()
-    while library and wait() do
-        chromaColor = Color3.fromHSV(tick() % 6 / 6, 1, 1)
-    end
-end)()]]
 
 function library:Create(class, properties)
     properties = properties or {}
     if not class then return end
-    local a = class == "Square" or class == "Line" or class == "Text" or class == "Quad" or class == "Circle" or class == "Triangle"
-    local t = a and Drawing or Instance
+    local drawing = class == "Square" or class == "Line" or class == "Text" or class == "Quad" or class == "Circle" or class == "Triangle"
+    local t = drawing and Drawing or Instance
     local inst = t.new(class)
     for property, value in next, properties do
         inst[property] = value
     end
-    table.insert(self.instances, {object = inst, method = a})
+    table.insert(self.instances, {object = inst, method = drawing})
     return inst
 end
 
@@ -80,7 +67,7 @@ function library:AddConnection(connection, name, callback)
 end
 
 function library:Unload()
-    inputService.MouseIconEnabled = self.mousestate
+    UserInputService.MouseIconEnabled = self.mousestate
     for _, c in next, self.connections do
         c:Disconnect()
     end
@@ -96,41 +83,42 @@ function library:Unload()
             coroutine.resume(coroutine.create(o.SetState, o))
         end
     end
-    library = nil
-    getgenv().library = nil
+    library, getgenv().library = nil
 end
 
 function library:LoadConfig(config)
     if table.find(self:GetConfigs(), config) then
-        local Read, Config = pcall(function() return game:GetService("HttpService"):JSONDecode(readfile(self.foldername .. "/" .. config .. self.fileext)) end)
+        local Read, Config = pcall(function() return HttpService:JSONDecode(readfile(self.foldername .. "/" .. config .. self.fileext)) end)
         Config = Read and Config or {}
-        for _, option in next, self.options do
-            if option.hasInit then
-                if option.type ~= "button" and option.flag and not option.skipflag then
-                    if option.type == "toggle" then
-                        coroutine.wrap(function() option:SetState(Config[option.flag] == 1) end)()
-                    elseif option.type == "color" then
-                        if Config[option.flag] then
-                            coroutine.wrap(function() option:SetColor(Config[option.flag]) end)()
-                            if option.trans then
-                                coroutine.wrap(function() option:SetTrans(Config[option.flag .. " Transparency"]) end)()
+        pcall(function()
+            for _, option in next, self.options do
+                if option.hasInit then
+                    if option.type ~= "button" and option.flag and not option.skipflag then
+                        if option.type == "toggle" then
+                            coroutine.wrap(function() option:SetState(Config[option.flag] == 1) end)()
+                        elseif option.type == "color" then
+                            if Config[option.flag] then
+                                coroutine.wrap(function() option:SetColor(Config[option.flag]) end)()
+                                if option.trans then
+                                    coroutine.wrap(function() option:SetTrans(Config[option.flag .. " Transparency"]) end)()
+                                end
                             end
+                        elseif option.type == "bind" then
+                            coroutine.wrap(function() option:SetKey(Config[option.flag]) end)()
+                        else
+                            coroutine.wrap(function() option:SetValue(Config[option.flag]) end)()
                         end
-                    elseif option.type == "bind" then
-                        coroutine.wrap(function() option:SetKey(Config[option.flag]) end)()
-                    else
-                        coroutine.wrap(function() option:SetValue(Config[option.flag]) end)()
                     end
                 end
             end
-        end
+        end)
     end
 end
 
 function library:SaveConfig(config)
     local Config = {}
     if table.find(self:GetConfigs(), config) then
-        Config = game:GetService("HttpService"):JSONDecode(readfile(self.foldername .. "/" .. config .. self.fileext))
+        Config = HttpService:JSONDecode(readfile(self.foldername .. "/" .. config .. self.fileext))
     end
     for _, option in next, self.options do
         if option.type ~= "button" and option.flag and not option.skipflag then
@@ -150,7 +138,7 @@ function library:SaveConfig(config)
             end
         end
     end
-    writefile(self.foldername .. "/" .. config .. self.fileext, game:GetService("HttpService"):JSONEncode(Config))
+    writefile(self.foldername .. "/" .. config .. self.fileext, HttpService:JSONEncode(Config))
 end
 
 function library:GetConfigs()
@@ -183,13 +171,14 @@ library.createLabel = function(option, parent)
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
         TextWrapped = true,
+        RichText = true,
         Parent = parent
     })
 
     setmetatable(option, {__newindex = function(t, i, v)
         if i == "Text" then
             option.main.Text = tostring(v)
-            option.main.Size = UDim2.new(1, -12, 0, textService:GetTextSize(option.main.Text, 15, Enum.Font.Code, Vector2.new(option.main.AbsoluteSize.X, 9e9)).Y + 6)
+            option.main.Size = UDim2.new(1, -12, 0, TextService:GetTextSize(option.main.Text, 15, Enum.Font.Code, Vector2.new(option.main.AbsoluteSize.X, 9e9)).Y + 6)
         end
     end})
     option.Text = option.text
@@ -228,7 +217,7 @@ library.createDivider = function(option, parent)
         if i == "Text" then
             if v then
                 option.title.Text = tostring(v)
-                option.title.Size = UDim2.new(0, textService:GetTextSize(option.title.Text, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X + 12, 0, 20)
+                option.title.Size = UDim2.new(0, TextService:GetTextSize(option.title.Text, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X + 12, 0, 20)
                 option.main.Size = UDim2.new(1, 0, 0, 18)
             else
                 option.title.Text = ""
@@ -375,17 +364,14 @@ library.createToggle = function(option, parent)
             if not library.warning and not library.slider then
                 if option.style then
                     tickbox.ImageColor3 = library.flags["Menu Accent Color"]
-                    --tweenService:Create(tickbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageColor3 = library.flags["Menu Accent Color"]}):Play()
                 else
                     tickbox.BorderColor3 = library.flags["Menu Accent Color"]
                     tickboxOverlay.BorderColor3 = library.flags["Menu Accent Color"]
-                    --tweenService:Create(tickbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BorderColor3 = library.flags["Menu Accent Color"]}):Play()
-                    --tweenService:Create(tickboxOverlay, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BorderColor3 = library.flags["Menu Accent Color"]}):Play()
                 end
             end
             if option.tip then
                 library.tooltip.Text = option.tip
-                library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
+                library.tooltip.Size = UDim2.new(0, TextService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
     end)
@@ -402,12 +388,9 @@ library.createToggle = function(option, parent)
         if input.UserInputType.Name == "MouseMovement" then
             if option.style then
                 tickbox.ImageColor3 = Color3.new()
-                --tweenService:Create(tickbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageColor3 = Color3.new()}):Play()
             else
                 tickbox.BorderColor3 = Color3.new()
                 tickboxOverlay.BorderColor3 = Color3.new()
-                --tweenService:Create(tickbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BorderColor3 = Color3.new()}):Play()
-                --tweenService:Create(tickboxOverlay, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BorderColor3 = Color3.new()}):Play()
             end
             library.tooltip.Position = UDim2.new(2)
         end
@@ -502,9 +485,9 @@ library.createButton = function(option, parent)
         if input.UserInputType.Name == "MouseButton1" then
             coroutine.wrap(function()
                 if not library.flags["Menu Accent Color"] then return end
-                tweenService:Create(option.title, TweenInfo.new(0.2), {BackgroundColor3 = library.flags["Menu Accent Color"]}):Play()
+                TweenService:Create(option.title, TweenInfo.new(0.2), {BackgroundColor3 = library.flags["Menu Accent Color"]}):Play()
                 wait(.1)
-                tweenService:Create(option.title, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
+                TweenService:Create(option.title, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
             end)()
             option.callback()
             
@@ -519,7 +502,7 @@ library.createButton = function(option, parent)
             end
             if option.tip then
                 library.tooltip.Text = option.tip
-                library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
+                library.tooltip.Size = UDim2.new(0, TextService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
     end)
@@ -600,13 +583,13 @@ library.createBind = function(option, parent)
         if input.UserInputType.Name == "MouseButton1" then
             binding = true
             bindinput.Text = "[...]"
-            bindinput.Size = UDim2.new(0, -textService:GetTextSize(bindinput.Text, 16, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 16)
+            bindinput.Size = UDim2.new(0, -TextService:GetTextSize(bindinput.Text, 16, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 16)
             bindinput.TextColor3 = library.flags["Menu Accent Color"]
         end
     end)
 
-    library:AddConnection(inputService.InputBegan, function(input)
-        if inputService:GetFocusedTextBox() then return end
+    library:AddConnection(UserInputService.InputBegan, function(input)
+        if UserInputService:GetFocusedTextBox() then return end
         if binding then
             local key = (table.find(whitelistedMouseinputs, input.UserInputType) and not option.nomouse) and input.UserInputType
             option:SetKey(key or (not table.find(blacklistedKeys, input.KeyCode)) and input.KeyCode)
@@ -618,8 +601,8 @@ library.createBind = function(option, parent)
                 else
                     library.flags[option.flag] = true
                     if Loop then Loop:Disconnect() option.callback(true, 0) end
-                    Loop = library:AddConnection(runService.RenderStepped, function(step)
-                        if not inputService:GetFocusedTextBox() then
+                    Loop = library:AddConnection(RunService.RenderStepped, function(step)
+                        if not UserInputService:GetFocusedTextBox() then
                             option.callback(nil, step)
                         end
                     end)
@@ -628,7 +611,7 @@ library.createBind = function(option, parent)
         end
     end)
 
-    library:AddConnection(inputService.InputEnded, function(input)
+    library:AddConnection(UserInputService.InputEnded, function(input)
         if option.key ~= "None" then
             if input.KeyCode.Name == option.key or input.UserInputType.Name == option.key then
                 if Loop then
@@ -657,7 +640,7 @@ library.createBind = function(option, parent)
             end
             bindinput.Text = "[" .. a:gsub("Control", "CTRL"):upper() .. "]"
         end
-        bindinput.Size = UDim2.new(0, -textService:GetTextSize(bindinput.Text, 16, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 16)
+        bindinput.Size = UDim2.new(0, -TextService:GetTextSize(bindinput.Text, 16, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 16)
     end
     option:SetKey()
 end
@@ -788,7 +771,7 @@ library.createSlider = function(option, parent)
             end
             if option.tip then
                 library.tooltip.Text = option.tip
-                library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
+                library.tooltip.Size = UDim2.new(0, TextService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
     end)
@@ -806,7 +789,6 @@ library.createSlider = function(option, parent)
             library.tooltip.Position = UDim2.new(2)
             if option ~= library.slider then
                 option.slider.BorderColor3 = Color3.new()
-                --option.fill.BorderColor3 = Color3.new()
             end
         end
     end)
@@ -1027,7 +1009,7 @@ library.createList = function(option, parent)
         if input.UserInputType.Name == "MouseMovement" then
             if option.tip then
                 library.tooltip.Text = option.tip
-                library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
+                library.tooltip.Size = UDim2.new(0, TextService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
     end)
@@ -1162,21 +1144,21 @@ library.createList = function(option, parent)
         if self.multiselect then
             for name, label in next, self.labels do
                 label.TextTransparency = self.value[name] and 1 or 0
-                if label:FindFirstChild"TextLabel" then
+                if label:FindFirstChild("TextLabel") then
                     label.TextLabel.Visible = self.value[name]
                 end
             end
         else
             if selected then
                 selected.TextTransparency = 0
-                if selected:FindFirstChild"TextLabel" then
+                if selected:FindFirstChild("TextLabel") then
                     selected.TextLabel.Visible = false
                 end
             end
             if self.labels[self.value] then
                 selected = self.labels[self.value]
                 selected.TextTransparency = 1
-                if selected:FindFirstChild"TextLabel" then
+                if selected:FindFirstChild("TextLabel") then
                     selected.TextLabel.Visible = true
                 end
             end
@@ -1297,7 +1279,7 @@ library.createBox = function(option, parent)
             end
             if option.tip then
                 library.tooltip.Text = option.tip
-                library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
+                library.tooltip.Size = UDim2.new(0, TextService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
     end)
@@ -1342,7 +1324,6 @@ end
 library.createColorPickerWindow = function(option)
     option.mainHolder = library:Create("TextButton", {
         ZIndex = 4,
-        --Position = UDim2.new(1, -184, 1, 6),
         Size = UDim2.new(0, option.trans and 200 or 184, 0, 264),
         BackgroundColor3 = Color3.fromRGB(40, 40, 40),
         BorderColor3 = Color3.new(),
@@ -1410,7 +1391,6 @@ library.createColorPickerWindow = function(option)
 
     option.hexBox = option.rgbBox:Clone()
     option.hexBox.Position = UDim2.new(0, 6, 0, 238)
-    --option.hexBox.Size = UDim2.new(0, (option.mainHolder.AbsoluteSize.X/2 - 10), 0, 20)
     option.hexBox.Parent = option.mainHolder
     option.hexInput = option.hexBox.TextBox;
 
@@ -1567,7 +1547,7 @@ library.createColorPickerWindow = function(option)
         end
     end)
 
-    library:AddConnection(inputService.InputChanged, function(Input)
+    library:AddConnection(UserInputService.InputChanged, function(Input)
         if Input.UserInputType.Name == "MouseMovement" then
             if editingsatval then
                 X = (satval.AbsolutePosition.X + satval.AbsoluteSize.X) - satval.AbsolutePosition.X
@@ -1726,7 +1706,7 @@ library.createColor = function(option, parent)
             end
             if option.tip then
                 library.tooltip.Text = option.tip
-                library.tooltip.Size = UDim2.new(0, textService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
+                library.tooltip.Size = UDim2.new(0, TextService:GetTextSize(option.tip, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X, 0, 20)
             end
         end
     end)
@@ -2018,7 +1998,6 @@ function library:AddTab(title, pos)
                 option.values = typeof(option.values) == "table" and option.values or {}
                 option.callback = typeof(option.callback) == "function" and option.callback or function() end
                 option.multiselect = typeof(option.multiselect) == "boolean" and option.multiselect or false
-                --option.groupbox = (not option.multiselect) and (typeof(option.groupbox) == "boolean" and option.groupbox or false)
                 option.value = option.multiselect and (typeof(option.value) == "table" and option.value or {}) or tostring(option.value or option.values[1] or "")
                 if option.multiselect then
                     for i, v in next, option.values do
@@ -2195,7 +2174,7 @@ function library:AddTab(title, pos)
                 self.titleText = library:Create("TextLabel", {
                     AnchorPoint = Vector2.new(0, 0.5),
                     Position = UDim2.new(0, 12, 0, 0),
-                    Size = UDim2.new(0, textService:GetTextSize(self.title, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X + 10, 0, 3),
+                    Size = UDim2.new(0, TextService:GetTextSize(self.title, 15, Enum.Font.Code, Vector2.new(9e9, 9e9)).X + 10, 0, 3),
                     BackgroundColor3 = Color3.fromRGB(30, 30, 30),
                     BorderSizePixel = 0,
                     Text = self.title,
@@ -2276,7 +2255,7 @@ function library:AddTab(title, pos)
     function tab:Init()
         if self.hasInit then return end
         self.hasInit = true
-        local size = textService:GetTextSize(self.title, 18, Enum.Font.Code, Vector2.new(9e9, 9e9)).X + 10
+        local size = TextService:GetTextSize(self.title, 18, Enum.Font.Code, Vector2.new(9e9, 9e9)).X + 10
 
         self.button = library:Create("TextLabel", {
             Position = UDim2.new(0, library.tabSize, 0, 22),
@@ -2509,9 +2488,9 @@ end
 function library:Close()
     self.open = not self.open
     if self.open then
-        inputService.MouseIconEnabled = false
+        UserInputService.MouseIconEnabled = false
     else
-        inputService.MouseIconEnabled = self.mousestate
+        UserInputService.MouseIconEnabled = self.mousestate
     end
     if self.main then
         if self.popup then
@@ -2527,7 +2506,7 @@ function library:Init()
     self.hasInit = true
 
     self.base = library:Create("ScreenGui", {IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Global})
-    if runService:IsStudio() then
+    if RunService:IsStudio() then
         self.base.Parent = script.Parent.Parent
     elseif syn then
         pcall(function() syn.protect_gui(self.base) end)
@@ -2726,19 +2705,19 @@ function library:Init()
         end
     end
 
-    self:AddConnection(inputService.InputEnded, function(input)
+    self:AddConnection(UserInputService.InputEnded, function(input)
         if input.UserInputType.Name == "MouseButton1" and self.slider then
             self.slider.slider.BorderColor3 = Color3.new()
             self.slider = nil
         end
     end)
 
-    self:AddConnection(inputService.InputChanged, function(input)
+    self:AddConnection(UserInputService.InputChanged, function(input)
         if not self.open then return end
         
         if input.UserInputType.Name == "MouseMovement" then
             if self.cursor then
-                local mouse = inputService:GetMouseLocation()
+                local mouse = UserInputService:GetMouseLocation()
                 local MousePos = Vector2.new(mouse.X, mouse.Y)
                 self.cursor.PointA = MousePos
                 self.cursor.PointB = MousePos + Vector2.new(0, 11)
@@ -2786,126 +2765,10 @@ function library:Init()
         end)()
     end
 
-    --loaded notification
-    if not library.silent then
-        --if Loaded then
-            local r, g, b = library.round(library.flags["Menu Accent Color"])
-            library:SendNotification(5, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.title.."</font> loaded successfully")
-        --else
-        --    local r, g, b = library.round(library.flags["Menu Accent Color"])
-        --    library:SendNotification(5, "Failed to load "..library.title.." (error copied to clipboard)")
-        --    --setclipboard(LoadError)
-        --end
-    end
+    local r, g, b = library.round(library.flags["Menu Accent Color"])
+    library:SendNotification(5, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.title.."</font> loaded successfully")
 end
 
---Setting tab
-library.SettingsTab = library:AddTab("Settings", math.huge)
-library.SettingsColumn = library.SettingsTab:AddColumn()
-library.SettingsColumn1 = library.SettingsTab:AddColumn()
-
-library.MainSection = library.SettingsColumn:AddSection("Main")
-library.MainSection:AddButton({text = "Unload Cheat", nomouse = true, callback = function()
-    library:Unload()
-    getgenv().proxima = nil
-end})
-library.MainSection:AddBind({text = "Panic Key", callback = library.options["Unload Cheat"].callback})
---[[library.MainSection:AddToggle({text = "Silent", callback = function(State)
-    if State then
-        library.silent = true
-    else
-        library.silent = false
-    end
-end})]]
-
-library.MenuSection = library.SettingsColumn:AddSection("Menu")
-library.MenuSection:AddBind({text = "Open / Close", flag = "UI Toggle", nomouse = true, key = "F8", callback = function() library:Close() end})
-library.MenuSection:AddColor({text = "Accent Color", flag = "Menu Accent Color", color = Color3.fromRGB(189, 147, 249), callback = function(Color)
-    if library.currentTab then
-        library.currentTab.button.TextColor3 = Color
-    end
-    for _, obj in next, library.theme do
-        obj[(obj.ClassName == "TextLabel" and "TextColor3") or (obj.ClassName == "ImageLabel" and "ImageColor3") or "BackgroundColor3"] = Color
-    end
-end})
-local Backgrounds = {
-    ["Floral"] = 5553946656,
-    ["Flowers"] = 6071575925,
-    ["Circles"] = 6071579801,
-    ["Hearts"] = 6073763717
-}
-library.MenuSection:AddList({text = "Background", flag = "UI Background", max = 6, values = {"Floral", "Flowers", "Circles", "Hearts"}, callback = function(Value)
-    if Backgrounds[Value] then
-        library.main.Image = "rbxassetid://" .. Backgrounds[Value]
-    end
-end}):AddColor({flag = "Menu Background Color", color = Color3.new(), callback = function(Color)
-    library.main.ImageColor3 = Color
-end, trans = 1, calltrans = function(Value)
-    library.main.ImageTransparency = 1 - Value
-end})
-library.MenuSection:AddSlider({text = "Tile Size", value = 150, min = 50, max = 500, callback = function(Value)
-    library.main.TileSize = UDim2.new(0, Value, 0, Value)
-end})
-
-library.ConfigSection = library.SettingsColumn1:AddSection("Configs")
-local r, g, b = library.round(library.flags["Menu Accent Color"])
-library.ConfigSection:AddBox({text = "Config Name", skipflag = true})
-library.ConfigSection:AddButton({text = "Create", callback = function()
-    if library.flags["Config Name"] ~= nil and not library.flags["Config Name"]:match("auto_load") then
-        library:GetConfigs()
-        writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
-        library.options["Config List"]:AddValue(library.flags["Config Name"])
-        --library.options["Auto Load List"]:AddValue(library.flags["Config Name"])
-        library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config Name"].."</font> config")
-        library.options["Config Name"]:SetValue("")
-    else
-        library:SendNotification(5, "Invaild string.\nDo not use spaces", 2)
-    end
-end})
-library.ConfigWarning = library:AddWarning({type = "confirm"})
-library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", value = "Default", values = library:GetConfigs()})
-
-library.ConfigSection:AddButton({text = "Save", callback = function()
-    library.ConfigWarning.text = "Are you sure you want to save your current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
-    if library.ConfigWarning:Show() then
-        library:SaveConfig(library.flags["Config List"])
-        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been saved")
-    end
-end})
-library.ConfigSection:AddButton({text = "Load", callback = function()
-    library.ConfigWarning.text = "Are you sure you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
-    if library.ConfigWarning:Show() then
-        library:LoadConfig(library.flags["Config List"])
-        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
-    end
-end})
-library.ConfigSection:AddButton({text = "Delete", callback = function()
-    library.ConfigWarning.text = "Are you sure you want to delete <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
-    if library.ConfigWarning:Show() then
-        local Config = library.flags["Config List"]
-        if table.find(library:GetConfigs(), Config) and isfile(library.foldername .. "/" .. Config .. library.fileext) then
-            delfile(library.foldername .. "/" .. Config .. library.fileext)
-            library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
-            library.options["Config List"]:RemoveValue(Config)
-            --library.options["Auto Load List"]:RemoveValue(Config)
-        end
-    end
-end})
-
---[[library.AutoSection = library.SettingsColumn1:AddSection("Automatic")
-library.AutoSection:AddDivider("Auto Load")
-library.AutoSection:AddToggle({text = "Enabled", flag = "Auto Load", callback = function(State)
-    if State then
-        writefile(library.foldername .. "/auto_load" .. library.fileext, "return '"..library.flags["Auto Load List"].."'")
-    end
-end})
-library.AutoSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Auto Load List", value = "Default", values = library:GetConfigs(), callback = function(config)
-    if library.flags["Auto Load"] then
-        writefile(library.foldername .. "/auto_load.cfg", "return '"..config.."'")
-    end
-end})]]
-
---Notification
 local LastNotification = 0
 function library:SendNotification(duration, message, status)
     LastNotification = LastNotification + tick()
@@ -2943,7 +2806,7 @@ function library:SendNotification(duration, message, status)
         BorderColor3 = Color3.fromRGB(20, 20, 20),
         Parent = library.base
     })
-    tweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 240, 0, 80), BackgroundTransparency = 0}):Play()
+    TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 240, 0, 80), BackgroundTransparency = 0}):Play()
 
     local notificationText = library:Create("TextLabel", {
         Position = UDim2.new(0, 5, 0, 25),
@@ -2958,9 +2821,8 @@ function library:SendNotification(duration, message, status)
         TextWrapped = true,
         Parent = notification
     })
-    tweenService:Create(notificationText, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.3), {TextTransparency = 0}):Play()
+    TweenService:Create(notificationText, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.3), {TextTransparency = 0}):Play()
 
-    --bump existing notifications
     for _, notification in next, library.notifications do
         notification:TweenPosition(UDim2.new(1, -5, 1, notification.Position.Y.Offset - 85), "Out", "Quad", 0.2)
     end
@@ -2990,23 +2852,21 @@ function library:SendNotification(duration, message, status)
     })
 
     notification1:TweenSize(UDim2.new(1, 0, 0, 1), "Out", "Linear", duration)
-    tweenService:Create(notification2, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+    TweenService:Create(notification2, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
     table.insert(library.theme, notification1)
     table.insert(library.theme, notification2)
 
-    --remove
     coroutine.wrap(function()
         wait(duration)
         if not library then return end
         library.notifications[notification] = nil
-        --bump existing notifications down
         for _, otherNotif in next, library.notifications do
             if otherNotif.Position.Y.Offset < notification.Position.Y.Offset then
                 otherNotif:TweenPosition(UDim2.new(1, -5, 1, otherNotif.Position.Y.Offset + 85), "Out", "Quad", 0.2)
             end
         end
-        local tween = tweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 80), BackgroundTransparency = 0})
+        local tween = TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 80), BackgroundTransparency = 0})
         tween:Play()
         notificationText.Visible = false
         tween.Completed:Wait()
@@ -3014,20 +2874,99 @@ function library:SendNotification(duration, message, status)
     end)()
 end
 
---local Loaded, LoadError = true
+--Setting tab
+library.SettingsTab = library:AddTab("Settings", math.huge)
+library.SettingsColumn = library.SettingsTab:AddColumn()
+library.SettingsColumn1 = library.SettingsTab:AddColumn()
 
---Loaded, LoadError = pcall(function() end)
+library.MainSection = library.SettingsColumn:AddSection("Main")
+library.MainSection:AddButton({text = "Unload Cheat", nomouse = true, callback = function()
+    library:Unload()
+    getgenv().proxima = nil
+end})
+library.MainSection:AddBind({text = "Panic Key", callback = library.options["Unload Cheat"].callback})
+
+library.MenuSection = library.SettingsColumn:AddSection("Menu")
+library.MenuSection:AddBind({text = "Open / Close", flag = "UI Toggle", nomouse = true, key = "LeftAlt", callback = function() library:Close() end})
+library.MenuSection:AddColor({text = "Accent Color", flag = "Menu Accent Color", color = Color3.fromRGB(189, 147, 249), callback = function(Color)
+    if library.currentTab then
+        library.currentTab.button.TextColor3 = Color
+    end
+    for _, obj in next, library.theme do
+        obj[(obj.ClassName == "TextLabel" and "TextColor3") or (obj.ClassName == "ImageLabel" and "ImageColor3") or "BackgroundColor3"] = Color
+    end
+end})
+local Backgrounds = {
+    ["Floral"] = 5553946656,
+    ["Flowers"] = 6071575925,
+    ["Circles"] = 6071579801,
+    ["Hearts"] = 6073763717,
+}
+library.MenuSection:AddList({text = "Background", flag = "UI Background", max = 6, values = {"Floral", "Flowers", "Circles", "Hearts"}, callback = function(Value)
+    if Backgrounds[Value] then
+        library.main.Image = "rbxassetid://" .. Backgrounds[Value]
+    end
+end}):AddColor({flag = "Menu Background Color", color = Color3.new(), callback = function(Color)
+    library.main.ImageColor3 = Color
+end, trans = 1, calltrans = function(Value)
+    library.main.ImageTransparency = 1 - Value
+end})
+library.MenuSection:AddSlider({text = "Tile Size", value = 150, min = 50, max = 500, callback = function(Value)
+    library.main.TileSize = UDim2.new(0, Value, 0, Value)
+end})
+
+library.ConfigSection = library.SettingsColumn1:AddSection("Configs")
+local r, g, b = library.round(library.flags["Menu Accent Color"])
+library.ConfigSection:AddBox({text = "Config Name", skipflag = true})
+library.ConfigSection:AddButton({text = "Create", callback = function()
+    if library.flags["Config Name"] ~= nil then
+        library:GetConfigs()
+        writefile(library.foldername .. "/" .. library.flags["Config Name"] .. library.fileext, "{}")
+        library.options["Config List"]:AddValue(library.flags["Config Name"])
+        library:SendNotification(3, "Successfully created <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config Name"] .. "</font> config")
+        library.options["Config Name"]:SetValue("")
+    else
+        library:SendNotification(5, "Invaild string.\nDo not use spaces", 2)
+    end
+end})
+
+library.ConfigWarning = library:AddWarning({type = "confirm"})
+library.ConfigSection:AddList({text = "Configs", skipflag = true, value = "", flag = "Config List", value = "Default", values = library:GetConfigs()})
+
+library.ConfigSection:AddButton({text = "Save", callback = function()
+    library.ConfigWarning.text = "Are you sure you want to save your current settings to <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
+    if library.ConfigWarning:Show() then
+        library:SaveConfig(library.flags["Config List"])
+        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been saved")
+    end
+end})
+library.ConfigSection:AddButton({text = "Load", callback = function()
+    library.ConfigWarning.text = "Are you sure you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
+    if library.ConfigWarning:Show() then
+        library:LoadConfig(library.flags["Config List"])
+        library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
+    end
+end})
+library.ConfigSection:AddButton({text = "Delete", callback = function()
+    library.ConfigWarning.text = "Are you sure you want to delete <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"
+    if library.ConfigWarning:Show() then
+        local Config = library.flags["Config List"]
+        if table.find(library:GetConfigs(), Config) and isfile(library.foldername .. "/" .. Config .. library.fileext) then
+            delfile(library.foldername .. "/" .. Config .. library.fileext)
+            library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been deleted")
+            library.options["Config List"]:RemoveValue(Config)
+        end
+    end
+end})
 
 coroutine.wrap(function()
-    wait(1.5)
     if not library:GetConfigs()[1] then return end
+    repeat wait() until library.hasInit
     if library:AddWarning({type = "confirm", text = "Do you want to load <font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>" .. library.flags["Config List"] .. "</font> config?"}):Show() then
         library:LoadConfig(library.flags["Config List"])
         library:SendNotification(2, "<font color='rgb(" .. r .. "," .. g .. "," .. b .. ")'>"..library.flags["Config List"].."</font> config has been loaded")
     end
 end)()
-
---insert loaded notification
 
 if not library:GetConfigs()[1] then
     writefile(library.foldername .. "/Default" .. library.fileext, loadstring(game:HttpGet("https://raw.githubusercontent.com/2kbyte/public/main/default_config.lua", true))())
